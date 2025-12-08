@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import Box from '@mui/material/Box';
 import IconButton from '@mui/material/IconButton';
+import Typography from '@mui/material/Typography';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import PauseIcon from '@mui/icons-material/Pause';
 import SkipNextIcon from '@mui/icons-material/SkipNext';
@@ -14,7 +15,6 @@ export default function YouTubePlayer({ videoId, playing, onPlay, onPause, onEnd
     const [isPlaying, setIsPlaying] = useState(playing || false);
     const [volume, setVolume] = useState(100);
     const [isMuted, setIsMuted] = useState(false);
-    const playerRef = useRef(null);
 
     useEffect(() => {
         if (!window.YT) {
@@ -74,6 +74,8 @@ export default function YouTubePlayer({ videoId, playing, onPlay, onPause, onEnd
                             if (autoPlayNext) {
                                 autoPlayNext();
                             }
+                            break;
+                        default:
                             break;
                     }
                 }

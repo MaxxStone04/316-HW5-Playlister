@@ -3,8 +3,6 @@ import { GlobalStoreContext } from '../store';
 import AuthContext from '../auth';
 import SongCatalogCard from './SongCatalogCard';
 import NewSongModal from './NewSongModal';
-import EditSongModal from './MUIEditSongModal';
-import RemoveSongModal from './RemoveSongModal';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Fab from '@mui/material/Fab';
@@ -17,7 +15,7 @@ import InputLabel from '@mui/material/InputLabel';
 import SearchIcon from '@mui/icons-material/Search';
 import ClearIcon from '@mui/icons-material/Clear';
 import AddIcon from '@mui/icons-material/Add';
-import YouTubePlayer from './YouTubePlayer';
+import youTubePlayer from './youTubePlayer';
 
 export default function SongsCatalogScreen() {
     const { store } = useContext(GlobalStoreContext);
@@ -167,9 +165,9 @@ export default function SongsCatalogScreen() {
                             <Typography variant="body1" gutterBottom>
                                 <strong>{selectedSong.title}</strong> by {selectedSong.artist}
                             </Typography>
-                            <YouTubePlayer 
+                            <youTubePlayer 
                                 videoId={selectedSong.youTubeId}
-                                key={selectedSong._id} // Force re-render when song changes
+                                key={selectedSong._id} 
                             />
                         </Box>
                     ) : (

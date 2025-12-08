@@ -18,7 +18,6 @@ import PhotoCamera from '@mui/icons-material/PhotoCamera';
 
 export default function EditAccountScreen() {
     const { auth } = useContext(AuthContext);
-    const { store } = useContext(GlobalStoreContext);
     const history = useHistory();
     
     const [formData, setFormData] = useState({

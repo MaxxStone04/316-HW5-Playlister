@@ -22,8 +22,6 @@ const modalStyle = {
 };
 
 export default function NewSongModal({ open, onClose, onSongAdded }) {
-    const { store } = useContext(GlobalStoreContext);
-    const { auth } = useContext(AuthContext);
     const [formData, setFormData] = useState({
         title: '',
         artist: '',

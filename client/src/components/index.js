@@ -20,7 +20,6 @@ import RemoveSongModal from './RemoveSongModal'
 import SelectAvatarModal from './SelectAvatarModal'
 import SongCard from './SongCard'
 import SongCatalogCard from './SongCatalogCard'
-import SongsCatalogScreen from './SongsCatalogScreen'
 import SplashScreen from './SplashScreen'
 import Statusbar from './Statusbar'
 import WorkspaceScreen from './WorkspaceScreen'
@@ -48,11 +47,9 @@ export {
     MUIEditSongModal,
     MUIErrorModal,
     NewSongModal,
-    PlaylistsScreen,
     PlayPlaylistModal,
     SelectAvatarModal,
     SongCatalogCard,
-    SongsCatalogScreen,
     SongCard,
     RegisterScreen,
     RemoveSongModal,

@@ -2,13 +2,11 @@ import { useContext } from 'react';
 import { useHistory } from 'react-router-dom';
 import AuthContext from '../auth';
 import { GlobalStoreContext } from '../store';
-import Copyright from './Copyright';
-
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
-import Container from '@mui/material/Container';
-import CssBaseline from '@mui/masterial/CssBaseline';
 import Typography from '@mui/material/Typography';
+import MusicNoteIcon from '@mui/icons-material/MusicNote';
+import QueueMusicIcon from '@mui/icons-material/QueueMusic';
 
 export default function WelcomeScreen() {
     const { auth } = useContext(AuthContext);
@@ -32,51 +30,106 @@ export default function WelcomeScreen() {
     };
 
     return (
-        <Container component="main" maxWidth="xs">
-            <CssBaseline />
-            <Box
+        <Box sx={{
+            minHeight: '100vh',
+            bgcolor: '#FFFFE4', 
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            p: 3
+        }}>
+            <Typography 
+                variant="h1" 
                 sx={{
-                    marginTop: 8,
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
+                    fontSize: '4rem',
+                    fontWeight: 'bold',
+                    color: '#333',
+                    mb: 2,
+                    textAlign: 'center'
                 }}
             >
-                <Typography compponent="h1" variant="h3" sx={{ mb: 3 }}>
-                    Tha Playlister
-                </Typography>
+                The Playlister
+            </Typography>
 
-                <Box sx={{ width: '100%', mt: 1 }}>
-                    <Button
-                        fullWidth
-                        variant="contained"
-                        sx={{ mt: 3, mb: 2, py: 2 }}
-                        onClick={handleContinueGuest}
-                    >
-                        Continue as Guest
-                    </Button>
-
-                    <Button
-                        fullWidth
-                        variant="outlined"
-                        sx={{ mt: 1, mb: 2, py: 2 }}
-                        onClick={handleLogin}
-                    >
-                        Login
-                    </Button>
-
-                    <Button
-                        fullWidth
-                        variant="outlined"
-                        sx={{ mt: 1, mb: 2, py: 2 }}
-                        onClick={handleCreateAccount}
-                    >
-                        Create Account
-                    </Button>
+            <Box sx={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                mb: 8,
+                opacity: 0.8 
+            }}>
+                <QueueMusicIcon sx={{ 
+                    fontSize: 150, 
+                    color: '#000000',
+                    transform: 'rotate(180deg)'
+                }} />
+                <Box sx={{ 
+                    display: 'flex', 
+                    flexDirection: 'column', 
+                    ml: 2,
+                    transform: 'rotate(180deg)'
+                }}>
                 </Box>
-
-                <Copyright sx={{ mt: 8, mb: 4 }} />
             </Box>
-        </Container>
+            <Box sx={{
+                display: 'flex',
+                flexDirection: 'row',
+                justifyContent: 'center',
+                alignItems: 'center',
+                gap: 8, 
+                width: '80%',
+                maxWidth: 800,
+                mb: 4
+            }}>
+                <Button
+                    variant="contained"
+                    sx={{
+                        bgcolor: '#000000',
+                        color: 'white',
+                        px: 6,
+                        py: 2,
+                        fontSize: '1.2rem',
+                        fontWeight: 'bold',
+                        borderRadius: 2,
+                    }}
+                    onClick={handleContinueGuest}
+                >
+                    Continue as Guest
+                </Button>
+
+                <Button
+                    variant="contained"
+                    sx={{
+                        bgcolor: '#000000',
+                        color: 'white',
+                        px: 6,
+                        py: 2,
+                        fontSize: '1.2rem',
+                        fontWeight: 'bold',
+                        borderRadius: 2,
+                    }}
+                    onClick={handleLogin}
+                >
+                    Login
+                </Button>
+
+
+                <Button
+                    variant="contained"
+                    sx={{
+                        bgcolor: '#000000',
+                        color: 'white',
+                        px: 6,
+                        py: 2,
+                        fontSize: '1.2rem',
+                        fontWeight: 'bold',
+                        borderRadius: 2,
+                    }}
+                    onClick={handleCreateAccount}
+                >
+                    Create Account
+                </Button>
+            </Box>
+        </Box>
     );
 }

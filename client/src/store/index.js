@@ -7,6 +7,10 @@ import MoveSong_Transaction from '../transactions/MoveSong_Transaction'
 import RemoveSong_Transaction from '../transactions/RemoveSong_Transaction'
 import UpdateSong_Transaction from '../transactions/UpdateSong_Transaction'
 import AuthContext from '../auth'
+import AddSongToPlaylist_Transaction from '../transactions/AddSongToPlaylist_Transaction'
+import EditPlaylistName_Transaction from '../transactions/EditPlaylistName_Transaction'
+import RemoveSongFromPlaylist_Transaction from '../transactions/RemoveSongFromPlaylist_Transaction'
+import DuplicateSong_Transaction from '../transactions/DuplicateSong_Transaction'
 
 /*
     This is our global data store. Note that it uses the Flux design pattern,
@@ -31,8 +35,16 @@ export const GlobalStoreActionType = {
     SET_LIST_NAME_EDIT_ACTIVE: "SET_LIST_NAME_EDIT_ACTIVE",
     EDIT_SONG: "EDIT_SONG",
     REMOVE_SONG: "REMOVE_SONG",
-    HIDE_MODALS: "HIDE_MODALS"
-}
+    HIDE_MODALS: "HIDE_MODALS",
+    SET_PLAYLIST_SEARCH_RESULTS: "SET_PLAYLIST_SEARCH_RESULTS",
+    SET_SONG_SEARCH_RESULTS: "SET_SONG_SEARCH_RESULTS",
+    SET_PLAYLIST_SORT: "SET_PLAYLIST_SORT",
+    SET_SONG_SORT: "SET_SONG_SORT",
+    SET_CURRENT_PLAYLIST: "SET_CURRENT_PLAYLIST",
+    SET_CURRENT_SONG: "SET_CURRENT_SONG",
+    SET_EDIT_MODE: "SET_EDIT_MODE",
+    SET_GUEST_MODE: "SET_GUEST_MODE"
+};
 
 // WE'LL NEED THIS TO PROCESS TRANSACTIONS
 const tps = new jsTPS();
@@ -41,7 +53,11 @@ const CurrentModal = {
     NONE : "NONE",
     DELETE_LIST : "DELETE_LIST",
     EDIT_SONG : "EDIT_SONG",
-    ERROR : "ERROR"
+    REMOVE_SONG: "REMOVE_SONG",
+    PLAY_PLAYLIST: "PLAY_PLAYLIST",
+    EDIT_PLAYLIST: "EDIT_PLAYLIST",
+    SELECT_AVATAR: "SELECT_AVATAR",
+    ADD_SONG_TO_PLAYLIST: "ADD_SONG_TO_PLAYLIST"
 }
 
 // WITH THIS WE'RE MAKING OUR GLOBAL DATA STORE
@@ -57,21 +73,104 @@ function GlobalStoreContextProvider(props) {
         newListCounter: 0,
         listNameActive: false,
         listIdMarkedForDeletion: null,
-        listMarkedForDeletion: null
+        listMarkedForDeletion: null,
+
+        playlistSearch: {
+            name: '',
+            userName: '',
+            songTitle: '',
+            songArtist: '',
+            songYear: ''
+        },
+
+        songSearch: {
+            title: '',
+            artist: '',
+            year: ''
+        },
+
+        playlistSort: 'listeners-hi-lo',
+        songSort: 'listens-hi-lo',
+        currentPlaylists:[],
+        currentSongs: [],
+        guestMode: false,
+        editPlaylistData: null,
+        currentPlaylist: null,
+        currentPlaylistIndex: 0,
+        isPlayling: false,
+        avatarData: null,
+        isGuest: false
     });
     const history = useHistory();
 
-    console.log("inside useGlobalStore");
-
     // SINCE WE'VE WRAPPED THE STORE IN THE AUTH CONTEXT WE CAN ACCESS THE USER HERE
     const { auth } = useContext(AuthContext);
-    console.log("auth: " + auth);
-
+    
     // HERE'S THE DATA STORE'S REDUCER, IT MUST
     // HANDLE EVERY TYPE OF STATE CHANGE
     const storeReducer = (action) => {
         const { type, payload } = action;
         switch (type) {
+
+            case GlobalStoreActionType.SET_PLAYLIST_SEARCH_RESULTS: {
+                return setStore({
+                    ...store,
+                    currentPlaylists: payload.playlists
+                });
+            }
+            case GlobalStoreActionType.SET_SONG_SEARCH_RESULTS: {
+                return setStore({
+                    ...store,
+                    currentSongs: payload.songs
+                });
+            }
+            case GlobalStoreActionType.SET_PLAYLIST_SORT: {
+                return setStore({
+                    ...store,
+                    playlistSort: payload.sortType
+                });
+            } 
+            case GlobalStoreActionType.SET_SONG_SORT: {
+                return setStore({
+                    ...store,
+                    songSort: payload.sortType
+                });
+            }
+            case GlobalStoreActionType.SET_CURRENT_PLAYLIST: {
+                return setStore({
+                    ...store,
+                    currentPlaylist: payload.playlist,
+                    currentPlaylistIndex: 0,
+                    isPlaying: true,
+                    currentModal: CurrentModal.PLAY_PLAYLIST
+                });
+            }
+            case GlobalStoreActionType.SET_CURRENT_SONG: {
+                return setStore({
+                    ...store,
+                    currentPlaylistIndex: payload.index
+                });
+            }
+            case GlobalStoreActionType.SET_EDIT_MODE: {
+                return setStore({
+                    ...store,
+                    editPlaylistData: payload.data,
+                    currentModal: CurrentModal.EDIT_PLAYLIST
+                });
+            }
+            case GlobalStoreActionType.SET_SONG_TO_REMOVE: {
+                return setStore({
+                    ...store,
+                    currentModal: CurrentModal.REMOVE_SONG,
+                    songToRemove: payload.song
+                });
+            }
+            case GlobalStoreActionType.SET_GUEST_MODE: {
+                return setStore({
+                    ...store,
+                    isGuest: payload.isGuest
+                });
+            }
             // LIST UPDATE OF ITS NAME
             case GlobalStoreActionType.CHANGE_LIST_NAME: {
                 return setStore({
@@ -215,6 +314,345 @@ function GlobalStoreContextProvider(props) {
         }
     }
 
+    store.searchPlaylists = async function (searchParams) {
+        try {
+            const response = await fetch('http://localhost:4000/store/playlists/search', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(searchParams),
+                credentials: 'include'
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                storeReducer({
+                    type: GlobalStoreActionType.SET_PLAYLIST_SEARCH_RESULTS,
+                    payload: { playlists: data.playlists }
+                });
+            }
+        } catch (error) {
+            console.error("Error searching for a playlist with that query", error);
+        }
+    }
+
+    store.searchSongs = async function (searchParams) {
+        try {
+            const response = await fetch('http://localhost:4000/store/songs/search', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(searchParams),
+                credentials: 'include'
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                storeReducer({
+                    type: GlobalStoreActionType.SET_SONG_SEARCH_RESULTS,
+                    payload: { songs: data.songs }
+                });
+            }
+        } catch (error) {
+            console.error("Error searching for songs with that query", error);
+        }
+    }
+
+    store.sortPlaylists = async function (sortType) {
+        try {
+            const [field, order] = sortType.split('-');
+            const response = await fetch('http://localhost:4000/store/playlists/sort', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ field, order }),
+                credentials: 'include'
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                storeReducer({
+                    type: GlobalStoreActionType.SET_PLAYLIST_SORT,
+                    payload: { sortType }
+                });
+                storeReducer({
+                    type: GlobalStoreActionType.SET_PLAYLIST_SEARCH_RESULTS,
+                    payload: { playlists: data.playlists }
+                });
+            }
+        } catch (error) {
+            console.error("There was an error sorting the playlists:", error);
+        }
+    }
+
+    store.sortSongs = async function (sortType) {
+        try {
+            const [field, order] = sortType.split('-');
+            const response = await fetch('http://localhost:4000/store/songs/sort', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ field, order }),
+                credentials: 'include'
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                storeReducer({
+                    type: GlobalStoreActionType.SET_SONG_SORT,
+                    payload: { sortType }
+                });
+                
+                storeReducer({
+                    type: GlobalStoreActionType.SET_SONG_SEARCH_RESULTS,
+                    payload: { songs: data.songs }
+                });
+            }
+        } catch (error) {
+            console.error("There was an error sorting the songs: ", error);
+        }
+    }
+
+    store.playPlaylist = function (playlist) {
+        storeReducer({
+            type: GlobalStoreActionType.SET_CURRENT_PLAYLIST,
+            payload: { playlist }
+        });
+    }
+
+    store.nextSong = function () {
+        if (store.currentPlaylist) {
+            const nextIndex = (store.currentPlaylistIndex + 1) % store.currentPlaylist.songs.length;
+            
+            storeReducer({
+                type: GlobalStoreActionType.SET_CURRENT_SONG,
+                payload: { index: nextIndex }
+            });
+        }
+    }
+
+    store.prevSong = function () {
+        if (store.currentPlaylist) {
+            const prevIndex = store.currentPlaylistIndex > 0 ? store.currentPlaylistIndex - 1 : store.currentPlaylist.songs.length - 1;
+
+            storeReducer({
+                type: GlobalStoreActionType.SET_CURRENT_SONG,
+                payload: { index: prevIndex }
+            });
+        }
+    }
+
+    store.togglePlayPause = function () {
+        setStore({
+            ...store,
+            isPlayling: !store.isPlayling
+        });
+    }
+
+    store.closePlaylistModal = function () {
+        setStore({
+            ...store,
+            currentModal: CurrentModal.NONE,
+            currentPlaylist: null,
+            currentPlaylistIndex: 0,
+            isPlayling: false
+        });
+    }
+
+    store.editPlaylist = function (playlist) {
+        storeReducer({
+            type: GlobalStoreActionType.SET_EDIT_MODE,
+            payload: { data: playlist }
+        });
+    }
+
+    store.closeEditModal = function() {
+        setStore({
+            ...store,
+            currentModal: CurrentModal.NONE,
+            editPlaylistData: null
+        });
+    }
+
+    store.copyPlaylist = async function (playlistId) {
+        try {
+            const response = await fetch(`http://localhost:4000/store/playlist/${playlistId}/dup`, {
+                method: 'POST',
+                credentials: 'include'
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+
+                store.loadIdNamePairs();
+                return data.playlist;
+            }
+        } catch (error) {
+            console.error("There was an error copying the playlist: ", error)
+        }
+    }
+
+    store.addSongToCatalog = async function (songData) {
+        try {
+            const response = await fetch('http://localhost:4000/store/songs', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(songData),
+                credentials: 'include'
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                return data.song;
+            }
+        } catch (error) {
+            console.error("There was an error adding a song to the catalog: ", error);
+        }
+    }
+
+    store.showAvatarModal = function () {
+        setStore({
+            ...store,
+            currentModal: CurrentModal.SELECT_AVATAR
+        });
+    }
+
+    store.showAddSongToPlaylistModal = function (song) {
+        setStore({
+            ...store,
+            currentModal: CurrentModal.ADD_SONG_TO_PLAYLIST,
+            currentSong: song
+        });
+    }
+
+    store.showRemoveSongModal = function (songId, song) {
+        setStore({
+            ...store,
+            currentModal: CurrentModal.REMOVE_SONG,
+            songToRemove: song
+        });
+    }
+
+    store.showEditSongModal = function (index, song) {
+        setStore({
+            ...store,
+            currentModal: CurrentModal.EDIT_SONG,
+            currentSongIndex: index,
+            currentSong: song
+        });
+    }
+
+    store.showSelectAvatarModal = function () {
+        setStore({
+            ...store,
+            currentModal: CurrentModal.SELECT_AVATAR
+        });
+    }
+
+    store.showAddSongToPlaylistModal = function (song) {
+        setStore({
+            ...store,
+            currentModal: CurrentModal.ADD_SONG_TO_PLAYLIST,
+            currentSong: song
+        })
+    }
+
+    store.setGuestMode = function (isGuest) {
+        storeReducer({
+            type: GlobalStoreActionType.SET_GUEST_MODE,
+            payload: { isGuest: isGuest }
+        });
+    }
+
+    store.addEditPlaylistNameTransaction = function (playlistId, oldName, newName) {
+        const transaction = new EditPlaylistName_Transaction(this, playlistId, oldName, newName);
+        tps.addTransaction(transaction);
+        tps.doTransaction();
+    }
+
+    store.addSongToPlaylistTransaction = function (playlistId, song, index) {
+        const transaction = new AddSongToPlaylist_Transaction(this, playlistId, song, index);
+        tps.addTransaction(transaction);
+        tps.doTransaction();
+    }
+
+    store.addRemoveSongFromPlaylistTransaction = function (playlistId, song, index) {
+        const transaction = new RemoveSongFromPlaylist_Transaction(this, playlistId, song, index);
+        tps.addTransaction(transaction);
+        tps.doTransaction();
+    }
+
+    store.addDuplicateSongTransaction = function (playlistId, song, index) {
+        const transaction = new DuplicateSong_Transaction(this, playlistId, song, index);
+        tps.addTransaction(transaction);
+        tps.doTransaction();
+    }
+
+    store.addSongToPlaylist = async function (playlistId, song, index) {
+        try { 
+            const response = await fetch(`http://localhost:4000/store/playlist/${playlistId}`, {
+                credentials: 'include'
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                const playlist = data.playlist;
+
+                playlist.songs.splice(index, 0, song);
+
+                await fetch(`http://localhost:4000/store/playlist/${playlistId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ playlist }),
+                    credentials: 'include'
+                });
+            }
+        } catch (error) {
+            console.error("There was an error adding the song to the playlist: ", error);
+        }
+    }
+
+    store.removeSongFromPlaylist = async function (playlistId, index) {
+        try {
+            const response = await fetch(`http://localhost:4000/store/playlist/${playlistId}`, {
+                credentials: 'include'
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                const playlist = data.playlist;
+
+                playlist.songs.splice(index, 1);
+
+                await fetch(`http://localhost:4000/store/playlist/${playlistId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ playlist }),
+                    credentials: 'include'
+                });
+            }
+        } catch (error) {
+            console.error("There was an error removing the song from the plalyist: ", error);
+        }
+    }
+
+    store.setAddingToPlaylist = function (playlistId) {
+        setStore({
+            ...store,
+            addingToPlaylistId: playlistId
+        });
+    }
+
     store.tryAcessingOtherAccountPlaylist = function(){
         let id = "635f203d2e072037af2e6284";
         async function asyncSetCurrentList(id) {
@@ -303,6 +741,14 @@ function GlobalStoreContextProvider(props) {
 
     // THIS FUNCTION LOADS ALL THE ID, NAME PAIRS SO WE CAN LIST ALL THE LISTS
     store.loadIdNamePairs = function () {
+        if (store.isGuest) {
+            storeReducer({
+                type: GlobalStoreActionType.LOAD_ID_NAME_PAIRS,
+                payload: []
+            });
+            return;
+        }
+
         async function asyncLoadIdNamePairs() {
             const response = await storeRequestSender.getPlaylistPairs();
             if (response.data.success) {

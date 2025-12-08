@@ -1,4 +1,4 @@
-import { useContext, useState } from 'react';
+import { useContext, useState, useEffect } from 'react';
 import { GlobalStoreContext } from '../store';
 import Box from '@mui/material/Box';
 import Modal from '@mui/material/Modal';
@@ -51,7 +51,7 @@ export default function EditPlaylistModal() {
                 store.tps.clearAllTransactions();
             }
         }
-    }, [editPlaylistData]);
+    }, [editPlaylistData, store.tps]);
 
     if (!editPlaylistData) return null;
 

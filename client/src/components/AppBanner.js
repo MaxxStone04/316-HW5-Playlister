@@ -1,8 +1,7 @@
 import { useContext, useState } from 'react';
-import { Link } from 'react-router-dom'
+import { Link, useHistory, useLocation } from 'react-router-dom'
 import AuthContext from '../auth';
 import { GlobalStoreContext } from '../store'
-
 import EditToolbar from './EditToolbar'
 
 import AccountCircle from '@mui/icons-material/AccountCircle';
@@ -22,6 +21,8 @@ export default function AppBanner() {
     const { store } = useContext(GlobalStoreContext);
     const [anchorEl, setAnchorEl] = useState(null);
     const isMenuOpen = Boolean(anchorEl);
+    const history = useHistory();
+    const location = useLocation();
 
     const handleProfileMenuOpen = (event) => {
         setAnchorEl(event.currentTarget);
@@ -104,6 +105,12 @@ export default function AppBanner() {
             }}
             open={isMenuOpen}
             onClose={handleMenuClose}
+            PaperProps={{
+                sx: {
+                    mt: 1.5,
+                    minWidth: 180
+                }
+            }}
         >
             {menuItems}
         </Menu>
@@ -111,10 +118,11 @@ export default function AppBanner() {
 
     const isPlaylistsActive = location.pathname === '/playlists' || location.pathname.includes('/playlist/');
     const isSongsActive = location.pathname === '/songs';
+    const isWelcomeScreen = location.pathname === '/';
 
     return (
         <Box sx={{ flexGrow: 1 }}>
-            <AppBar position="static">
+            <AppBar position="static" sx={{ bgcolor: '#EE06FF' }}>
                 <Toolbar>
                     <IconButton
                         size="large"
@@ -127,50 +135,75 @@ export default function AppBanner() {
                         <HomeIcon />
                     </IconButton>
 
-                    <Button
-                        color="inherit"
-                        onClick={handlePlaylists}
-                        sx={{
-                            mr: 2,
-                            backgroundColor: isPlaylistsActive ? 'rgba(255, 255, 255, 0.1)' : 'transparent',
-                            '&:hover': {
-                                backgroundColor: 'rgba(255, 255, 255, 0.2)'
-                            }
-                        }}
-                    >
-                        Playlists
-                    </Button>
+                    <Box sx={{ 
+                        flexGrow: 1,
+                        display: 'flex',
+                        justifyContent: isWelcomeScreen ? 'flex-end' : 'center'
+                    }}>
+                        {isWelcomeScreen ? (
+                            <Box />
+                        ) : (
+                            <Box sx={{ 
+                                display: 'flex', 
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                flexGrow: 1
+                            }}>
+                                <Button
+                                    color="inherit"
+                                    onClick={handlePlaylists}
+                                    sx={{
+                                        mr: 2,
+                                        backgroundColor: isPlaylistsActive ? 'rgba(255, 255, 255, 0.2)' : 'transparent',
+                                        '&:hover': {
+                                            backgroundColor: 'rgba(255, 255, 255, 0.3)'
+                                        }
+                                    }}
+                                >
+                                    Playlists
+                                </Button>
 
-                    <Button
-                        color="inherit"
-                        onClick={handleSongs}
-                        sx={{
-                            mr: 2,
-                            backgroundColor: isSongsActive ? 'rgba(255, 255, 255, 0.1)' : 'transparent',
-                            '&:hover': {
-                                backgroundColor: 'rgba(255, 255, 255, 0.2)'
-                            }
-                        }}
-                    >
-                        Songs Catalog
-                    </Button>
+                                <Button
+                                    color="inherit"
+                                    onClick={handleSongs}
+                                    sx={{
+                                        mr: 2,
+                                        backgroundColor: isSongsActive ? 'rgba(255, 255, 255, 0.2)' : 'transparent',
+                                        '&:hover': {
+                                            backgroundColor: 'rgba(255, 255, 255, 0.3)'
+                                        }
+                                    }}
+                                >
+                                    Song Catalog
+                                </Button>
 
-                    <Typography
-                        variant="h6"
-                        noWrap
-                        component="div"
-                        sx={{ flexGrow: 1, display: { xs: 'none', sm: 'block' } }}
-                    >
-                        The Playlister
-                    </Typography>
+                                <Typography
+                                    variant="h6"
+                                    noWrap
+                                    component="div"
+                                    sx={{ 
+                                        display: { xs: 'none', md: 'block' },
+                                        fontWeight: 'bold',
+                                        ml: 4
+                                    }}
+                                >
+                                    The Playlister
+                                </Typography>
+                            </Box>
+                        )}
+                    </Box>
 
-                    {store.currentList && (
-                        <Box sx={{ mr: 2 }}>
-                            <EditToolbar />
-                        </Box>
-                    )}
+                    <Box sx={{ 
+                        display: 'flex', 
+                        alignItems: 'center',
+                        ml: 'auto' 
+                    }}>
+                        {store.currentList && (
+                            <Box sx={{ mr: 2 }}>
+                                <EditToolbar />
+                            </Box>
+                        )}
 
-                    <Box>
                         <IconButton
                             size="large"
                             edge="end"

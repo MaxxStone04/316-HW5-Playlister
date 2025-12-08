@@ -1,11 +1,10 @@
 import './App.css';
-import { React } from 'react'
+import { useContext } from 'react'
 import { BrowserRouter, Route, Switch } from 'react-router-dom'
 import { AuthContextProvider } from './auth';
-import { GlobalStoreContextProvider } from './store'
+import { GlobalStoreContextProvider, GlobalStoreContext } from './store'
 import {
     AppBanner,
-    HomeWrapper,
     WelcomeScreen,
     LoginScreen,
     RegisterScreen,
@@ -18,9 +17,7 @@ import {
     MUIDeleteModal,
     MUIEditSongModal,
     RemoveSongModal,
-    SelectAvatarModal,
     NewSongModal,
-    EditPlaylistModal
 } from './components'
 /*
   This is the entry-point for our application. Notice that we
@@ -28,6 +25,19 @@ import {
   
   @author McKilla Gorilla
 */
+
+function Modals() {
+    const { store } = useContext(GlobalStoreContext);
+
+    return (
+        <>
+            <PlayPlaylistModal />
+            <MUIDeleteModal />
+            <MUIEditSongModal />
+            <RemoveSongModal />
+        </>
+    );
+}
 const App = () => {   
     return (
         <BrowserRouter>
@@ -46,12 +56,7 @@ const App = () => {
                     </Switch>
                     <Statusbar />
 
-                    <PlayPlaylistModal />
-                    <MUIDeleteModal />
-                    <MUIEditSongModal />
-                    <RemoveSongModal />
-                    <EditPlaylistModal />
-                    <SelectAvatarModal />
+                    <Modals />
                 </GlobalStoreContextProvider>
             </AuthContextProvider>
         </BrowserRouter>

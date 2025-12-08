@@ -1,10 +1,9 @@
 import { useContext } from 'react';
-import { GlobalStoreActionType, GlobalStoreContext } from '../store';
+import { GlobalStoreContext } from '../store';
 import Box from '@mui/material/Box';
 import Modal from '@mui/material/Modal';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
-import Button from '@mui/material/Button';
 import Avatar from '@mui/material/Avatar';
 import List from '@mui/material/List';
 import ListItem from '@mui/material/ListItem';

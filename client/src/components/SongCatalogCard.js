@@ -9,7 +9,6 @@ import IconButton from '@mui/material/IconButton';
 import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
-import { useHistory } from 'react-router-dom';
 
 export default function SongCatalogCard({ song, onSelect, isSelected, index }) {
     const { store } = useContext(GlobalStoreContext);
@@ -17,7 +16,6 @@ export default function SongCatalogCard({ song, onSelect, isSelected, index }) {
     const [anchorEl, setAnchorEl] = useState(null);
     const [playlistAnchorEl, setPlaylistAnchorEl] = useState(null);
     const [playlists, setPlaylists] = useState([]);
-    const history = useHistory();
     
     const open = Boolean(anchorEl);
     const playlistMenuOpen = Boolean(playlistAnchorEl);
@@ -166,7 +164,7 @@ export default function SongCatalogCard({ song, onSelect, isSelected, index }) {
                         </Typography>
                         <Box sx={{ display: 'flex', gap: 3, mt: 1 }}>
                             <Typography variant="body2">
-                                <strong>Listens:</strong> {song.listens || 0}
+                                <strong>Listens:</strong> {song.listenCount || 0}
                             </Typography>
                             <Typography variant="body2">
                                 <strong>In Playlists:</strong> {song.playlistCount || 0}

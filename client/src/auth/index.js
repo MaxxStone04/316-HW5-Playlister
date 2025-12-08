@@ -10,7 +10,8 @@ export const AuthActionType = {
     GET_LOGGED_IN: "GET_LOGGED_IN",
     LOGIN_USER: "LOGIN_USER",
     LOGOUT_USER: "LOGOUT_USER",
-    REGISTER_USER: "REGISTER_USER"
+    REGISTER_USER: "REGISTER_USER",
+    SET_GUEST_MODE: "SET_GUEST_MODE"
 }
 
 function AuthContextProvider(props) {
@@ -23,7 +24,7 @@ function AuthContextProvider(props) {
 
     useEffect(() => {
         auth.getLoggedIn();
-    }, []);
+    }, [auth]);
 
     const authReducer = (action) => {
         const { type, payload } = action;
@@ -56,6 +57,14 @@ function AuthContextProvider(props) {
                     errorMessage: payload.errorMessage
                 })
             }
+            case AuthActionType.SET_GUEST_MODE: {
+                return setAuth({
+                    user: null,
+                    loggedIn: false,
+                    errorMessage: null,
+                    isGuest: true
+                });
+            }
             default:
                 return auth;
         }
@@ -72,6 +81,13 @@ function AuthContextProvider(props) {
                 }
             });
         }
+    }
+
+    auth.setGuestMode = function () {
+        authReducer({
+            type: AuthActionType.SET_GUEST_MODE,
+            payload: {}
+        });
     }
 
     auth.registerUser = async function(firstName, lastName, email, password, passwordVerify) {
