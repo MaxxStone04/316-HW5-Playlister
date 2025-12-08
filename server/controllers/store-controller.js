@@ -244,11 +244,324 @@ updatePlaylist = async (req, res) => {
     }
 }
 
+searchPlaylist = async (req, res) => {
+    if (auth.verifyUser(req) === null) {
+        return res.status(401).json({
+            success: false,
+            errorMessage: "Unauthorized User!"
+        });
+    }
+
+    const { name, userName, songTitle, songArtist, songYear } = req.body;
+
+    try {
+        let query = {};
+
+        if (name) {
+            query.name = { $regex: name, $options: "i"};
+        }
+
+        if (userName) {
+            const users = await dbManager.getUsersByPartialName(userName);
+            const userEmails = users.map(user => user.email);
+            query.ownerEmail = { $in: userEmails };
+        }
+
+        if (songTitle || songArtist || songYear) {
+            query['songs'] = { $exists: true, $ne: [] };
+        }
+
+        let playlists = await dbManager.getPlaylistsByQuery(query);
+
+        if (songTitle || songArtist || songYear) {
+            playlists = playlists.filter(playlist => {
+                return playlist.songs.some(some => {
+                    let matches = true;
+                    if (songTitle) {
+                        matches = matches && song.title.toLowerCase().includes(songTitle.toLowerCase());
+                    }
+                    if (songArtist) {
+                        matches = matches && song.artist.toLowerCase().includes(songArtist.toLowerCase());
+                    }
+                    if (songYear) {
+                        matches = matches && song.year.toString().includes(songYear);
+                    }
+                    return matches;
+                });
+            });
+        }
+
+        return res.status(200).json({
+            success: true,
+            playlists: playlists
+        });
+    } catch (error) {
+        return res.status(400).json({
+            success: false,
+            errorMessage: error.message
+        });
+    }
+}
+
+searchSongs = async (req, res) => {
+    if (auth.verifyUser(req) === null) {
+        return res.status(401).json({
+            success: false,
+            errorMessage: 'Unauthorized User!'
+        });
+    }
+
+    const { title, artist, year } = req.body;
+
+    try {
+        let query = [];
+
+        if (title) {
+            query.title = { $regex: title, $options: 'i' };
+        }
+        if (artist) {
+            query.artist = { $regex: artist, $options: 'i' };
+        } 
+        if (year) {
+            query.year = year;
+        }
+
+        const songs = await dbManager.getSongsByQuery(query);
+
+        return res.status(200).json({
+            success: true,
+            songs: songs
+        });
+
+    } catch (error) {
+        return res.status(400).json({
+            success: false,
+            errorMessage: error.message
+        });
+    }
+}
+
+sortPlaylists = async (req, res) => {
+    if (auth.verifyUser(req) === null) {
+        return res.status(401).json({
+            success: false,
+            errorMessage: 'Unauthroized User!'
+        });
+    }
+
+    const { field, order } = req.body;
+
+    try {
+        let playlists = await dbManager.getAllPlaylists();
+
+        playlists.sort((a, b) => {
+            switch (field) {
+                case 'listeners':
+                    return order === 'desc' ? (b.listeners - a.listeners) : (a.listeners - b.listeners);
+                case 'name':
+                    return order === 'desc' ? b.name.localCompare(a.name) : a.name.localCompare(b.name);
+                case 'userName':
+                    return order === 'desc' ? b.ownerEmail.localCompare(a.ownerEmail) : a.ownerEmail.localCompare(b.ownerEmail);
+                default:
+                    return 0;
+            }
+        });
+
+        return res.status(200).json({
+            success: true,
+            playlists: playlists
+        });
+    } catch (error) {
+        return res.status(400).json({
+            success: false,
+            errorMessage: error.message
+        });
+    }
+}
+
+sortSongs = async (req, res) => {
+    if (auth.verifyUser(req) === null) {
+        return res.status(401).json({
+            success: false,
+            errorMessage: 'Unauthroized User!'
+        });
+    }
+
+    const { field, order } = req.body;
+
+    try {
+        let songs = await dbManager.getAllSongs();
+
+        songs.sort((a, b) => {
+            switch (field) {
+                case 'listens': 
+                    return order === 'desc' ? (b.listens - a.listens) : (a.listens - b.listens);
+                case 'playlistCount':
+                    return order === 'desc' ? (b.playlistCount - a.playlistCount) : (a.playlistCount - b.playlistCount);
+                case 'title':
+                    return order === 'desc' ? b.title.localCompare(a.title) : a.title.localCompare(b.title);
+                case 'artist':
+                    return order === 'desc' ? b.artist.localCompare(a.artist) : a.artist.localCompare(b.artist);
+                case 'year':
+                    return order === 'desc' ? (b.year - a.year) : (a.year - b.year);
+                default: 
+                    return 0;
+            }
+        });
+
+        return res.status(200).json({
+            success: true,
+            songs: songs
+        });
+    } catch (error) {
+        return res.status(400).json({
+            success: false,
+            errorMessage: error.message
+        });
+    }
+}
+
+dupPlaylist = async (req, res) => {
+    if (auth.verifyUser(req) === null) {
+        return res.status(401).json({
+            success: false,
+            errorMessage: 'Unauthorized User!'
+        });
+    }
+    
+    try {
+        const originalPlaylist = await dbManager.getPlaylistById(req.params.id);
+        if (!originalPlaylist) {
+            return res.status(404).json({
+                success: false,
+                errorMessage: 'Playlist not found'
+            });
+        }
+        
+        const user = await dbManager.getUserById(req.userId);
+        
+        const newPlaylistData = {
+            name: `${originalPlaylist.name} (Copy)`,
+            ownerEmail: user.email,
+            songs: JSON.parse(JSON.stringify(originalPlaylist.songs)),
+            listeners: 0
+        };
+        
+        const newPlaylist = await dbManager.createPlaylist(newPlaylistData);
+        
+        return res.status(201).json({
+            success: true,
+            playlist: newPlaylist
+        });
+
+    } catch (error) {
+        return res.status(400).json({
+            success: false,
+            errorMessage: error.message
+        });
+    }
+}
+
+addSongToCatalog = async (req, res) => {
+    if (auth.verifyUser(req) === null) {
+        return res.status(401).json({
+            success: false,
+            errorMessage: 'Unauthorized User!'
+        });
+    }
+    
+    const { title, artist, year, youTubeId } = req.body;
+    
+    try {
+        const user = await dbManager.getUserById(req.userId);
+        
+        const existingSong = await dbManager.getSongByDetails(title, artist, year);
+        if (existingSong) {
+            return res.status(400).json({
+                success: false,
+                errorMessage: 'A song with this title, artist, and year already exists'
+            });
+        }
+        
+        const songData = {
+            title,
+            artist,
+            year,
+            youTubeId,
+            ownerEmail: user.email,
+            listens: 0,
+            playlistCount: 0
+        };
+        
+        const newSong = await dbManager.createSong(songData);
+        
+        return res.status(201).json({
+            success: true,
+            song: newSong
+        });
+
+    } catch (error) {
+        return res.status(400).json({
+            success: false,
+            errorMessage: error.message
+        });
+    }
+}
+
+removeSongFromCatalog = async (req, res) => {
+    if (auth.verifyUser(req) === null) {
+        return res.status(401).json({
+            success: false,
+            errorMessage: 'Unauthorized User!'
+        });
+    }
+    
+    try {
+        const song = await dbManager.getSongById(req.params.id);
+        if (!song) {
+            return res.status(404).json({
+                success: false,
+                errorMessage: 'The song was not found.'
+            });
+        }
+        
+        const user = await dbManager.getUserById(req.userId);
+        
+        if (song.ownerEmail !== user.email) {
+            return res.status(403).json({
+                success: false,
+                errorMessage: 'You can only remove songs you own'
+            });
+        }
+        
+        await dbManager.removeSongFromAllPlaylists(song._id);
+        await dbManager.deleteSong(req.params.id);
+        
+        return res.status(200).json({
+            success: true,
+            message: 'The song was removed from the catalog'
+        });
+
+    } catch (error) {
+        return res.status(400).json({
+            success: false,
+            errorMessage: error.message
+        });
+    }
+}
+
 module.exports = {
     createPlaylist,
     deletePlaylist,
     getPlaylistById,
     getPlaylistPairs,
     getPlaylists,
-    updatePlaylist
-}
+    updatePlaylist,
+    searchPlaylists,
+    searchSongs,
+    sortPlaylists,
+    sortSongs,
+    dupPlaylist,
+    addSongToCatalog,
+    removeSongFromCatalog
+};
