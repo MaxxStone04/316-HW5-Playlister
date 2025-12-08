@@ -9,7 +9,7 @@ const songSchema = new Schema(
         year: { type: Number, required: true },
         youTubeId: { type: String, required: true },
         ownerEmail: { type: String, required: true },
-        listens: { type: Number, default: 0 },
+        listenCount: { type: Number, default: 0 },
         playlistCount: { type: Number, default: 0 }
     },
     { timestamps: true },

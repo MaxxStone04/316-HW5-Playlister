@@ -9,6 +9,7 @@ const Schema = mongoose.Schema
 const playlistSchema = new Schema(
     {
         name: { type: String, required: true },
+        owner: { type: Schema.Types.ObjectId, ref: 'User', required: true},
         ownerEmail: { type: String, required: true },
         songs: { type: [{
             title: String,
@@ -16,7 +17,7 @@ const playlistSchema = new Schema(
             year: Number,
             youTubeId: String
         }], required: true },
-        listeners: { type: Number, default: 0 }
+        listenerCount: { type: Number, default: 0 }
     },
     { timestamps: true },
 )

@@ -210,8 +210,33 @@ class MongoDBManager extends DatabaseManager {
         const playlists = await Playlist.find({ ownerEmail });
         return playlists.map(playlist => ({
             _id: playlist._id,
-            name: playlist.name
+            name: playlist.name,
+            listenerCount: playlist.listenerCount
         }));
+    }
+
+    async getPlaylistsByQuery(query) {
+        await this.ensureInitialized();
+        return await Playlist.find(query).populate('owner', 'userName avatar');
+    }
+
+    async getAllPublicPlaylists() {
+        await this.ensureInitialized();
+        return await User.find({
+            $or: [
+                {
+                    userName: { $regex: userName, $options: 'i'}
+                },
+                {
+                    email: { $regex: userName, $options: 'i' }
+                }
+            ]
+        });
+    }
+
+    async getPlaylistsByQuery(query) {
+        await this.ensureInitialized();
+        return await Playlist.find(query);
     }
 }
 

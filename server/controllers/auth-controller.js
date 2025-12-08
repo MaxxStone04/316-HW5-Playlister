@@ -15,7 +15,6 @@ getLoggedIn = async (req, res) => {
         }
 
         const loggedInUser = await dbManager.getUserById(userId);
-        console.log("loggedInUser: " + loggedInUser);
 
         if (!loggedInUser) {
             return res.status(200).json({
@@ -40,7 +39,6 @@ getLoggedIn = async (req, res) => {
 }
 
 loginUser = async (req, res) => {
-    console.log("loginUser");
     try {
         const { email, password } = req.body;
 
@@ -50,8 +48,7 @@ loginUser = async (req, res) => {
             });
         }
 
-        const existingUser = await dbManager.getUserByEmail(email);
-        console.log("existingUser: ", existingUser); 
+        const existingUser = await dbManager.getUserByEmail(email); 
         if (!existingUser) {
             return res.status(401).json({
                 errorMessage: "Wrong email or password provided."
@@ -109,9 +106,9 @@ logoutUser = async (req, res) => {
 
 registerUser = async (req, res) => {
     try {
-        const { firstName, lastName, email, password, passwordVerify } = req.body;
-        console.log("create user: " + firstName + " " + lastName + " " + email + " " + password + " " + passwordVerify);
-        if (!firstName || !lastName || !email || !password || !passwordVerify) {
+        const { userName, email, password, passwordVerify, avatar } = req.body;
+        console.log("create user: " + userName + " " + email + " " + password + " " + passwordVerify);
+        if (!userNameName || !email || !password || !passwordVerify || !avatar) {
             return res.status(400).json({ 
                 errorMessage: "Please enter all required fields." 
             });
@@ -127,7 +124,6 @@ registerUser = async (req, res) => {
             })
         }
         const existingUser = await dbManager.getUserByEmail(email);
-        console.log("existingUser: " + existingUser);
         if (existingUser) {
             return res
                 .status(400)
@@ -137,11 +133,17 @@ registerUser = async (req, res) => {
                 })
         }
 
+        if (!avatar.startsWith('data:image/')) {
+            return res.status(400).json({
+                errorMessage: "Invalid avatar format. Please upload an image."
+            });
+        }
+
         const saltRounds = 10;
         const salt = await bcrypt.genSalt(saltRounds);
         const passwordHash = await bcrypt.hash(password, salt);
 
-        const newUser = await dbManager.createUser({firstName, lastName, email, passwordHash});
+        const newUser = await dbManager.createUser({userName, email, passwordHash, avatar});
         console.log("new user saved:", newUser);
 
         // LOGIN THE USER
@@ -155,7 +157,6 @@ registerUser = async (req, res) => {
         }
 
         const token = auth.signToken(userId);
-        console.log("token:" + token);
 
         await res.cookie("token", token, {
             httpOnly: true,
@@ -164,11 +165,11 @@ registerUser = async (req, res) => {
         }).status(200).json({
             success: true,
             user: {
-                firstName: newUser.firstName, 
-                lastName: newUser.lastName,   
-                email: newUser.email          
+                firstName: newUser.userName,   
+                email: newUser.email,
+                avatar: newUser.avatar          
             }
-        })
+        });
 
 
     } catch (err) {
@@ -177,9 +178,84 @@ registerUser = async (req, res) => {
     }
 }
 
+updateUser = async (req, res) => {
+    try {
+        const { userName, password, passwordVerify, avatar } = req.body;
+        const userId = req.userId;
+
+        if (!userId) {
+            return res.status(401).json({
+                success: false,
+                errorMessage: "Unauthorized"
+            });
+        }
+
+        const user = await dbManager.getUserById(userId);
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                errorMessage: "The user was not found"
+            });
+        }
+
+        if (userName !== undefined) {
+            if (!userName.trim()) {
+                return res.status(400).json({
+                    errorMessage: "The username cannot be empty"
+                });
+            }
+            user.userName = userName;
+        }
+
+        if (password) {
+            if (password.length < 8) {
+                return res.status(400).json({
+                    errorMessage: "The password must be at least 8 characters long"
+                });
+            }
+
+            if (password !== passwordVerify) {
+                return res.status(400).json({
+                    errorMessage: "The passwords do not match"
+                });
+            }
+
+            const salt = await bcrypt.genSalt(10);
+            user.passwordHash = await bcrypt.hash(password, salt);
+        }
+
+        if (avatar) {
+            if (!avatar.startsWith('data:image/')) {
+                return res.status(400).json({
+                    errorMessage: "Invalid avatar data format"
+                });
+            } 
+            user.avatar = avatar;
+        }
+
+        await user.save();
+
+        return res.status(200).json({
+            success: true,
+            user: {
+                userName: user.userName,
+                email: user.email,
+                avatar: user.avatar
+            }
+        });
+    } catch (error) {
+        console.error("There was an error updating the user: ", error);
+        res.status(500).json({
+            success: false,
+            errorMessage: "Internal server error"
+        });
+    }
+}
+
 module.exports = {
     getLoggedIn,
     registerUser,
     loginUser,
-    logoutUser
+    logoutUser,
+    updateUser
 }
