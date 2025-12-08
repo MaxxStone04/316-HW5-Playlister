@@ -1,6 +1,7 @@
-import { useContext, useState } from 'react';
+import { useContext, useState, useEffect } from 'react';
 import { useHistory } from 'react-router-dom';
 import AuthContext from '../auth';
+import { GlobalStoreContext } from '../store';
 import Copyright from './Copyright';
 import SelectAvatarModal from './SelectAvatarModal';
 
@@ -17,18 +18,32 @@ import PhotoCamera from '@mui/icons-material/PhotoCamera';
 
 export default function EditAccountScreen() {
     const { auth } = useContext(AuthContext);
+    const { store } = useContext(GlobalStoreContext);
     const history = useHistory();
     
     const [formData, setFormData] = useState({
-        userName: auth.user?.userName || '',
-        email: auth.user?.email || '',
+        userName: '',
+        email: '',
         password: '',
         passwordConfirm: ''
     });
     
     const [errors, setErrors] = useState({});
     const [showAvatarModal, setShowAvatarModal] = useState(false);
-    const [avatar, setAvatar] = useState(auth.user?.avatar || '');
+    const [avatar, setAvatar] = useState('');
+    const [loading, setLoading] = useState(false);
+
+    useEffect(() => {
+        if (auth.user) {
+            setFormData({
+                userName: auth.user.userName || '',
+                email: auth.user.email || '',
+                password: '',
+                passwordConfirm: ''
+            });
+            setAvatar(auth.user.avatar || '');
+        }
+    }, [auth.user]);
 
     if (!auth.loggedIn) {
         history.push('/login');
@@ -75,17 +90,19 @@ export default function EditAccountScreen() {
             return;
         }
         
+        setLoading(true);
+        
         try {
-
             const updateData = {
                 userName: formData.userName
             };
             
             if (formData.password) {
                 updateData.password = formData.password;
+                updateData.passwordVerify = formData.passwordConfirm;
             }
             
-            if (avatar) {
+            if (avatar && avatar !== auth.user.avatar) {
                 updateData.avatar = avatar;
             }
             
@@ -98,16 +115,19 @@ export default function EditAccountScreen() {
                 credentials: 'include'
             });
             
+            const data = await response.json();
+            
             if (response.ok) {
                 auth.getLoggedIn();
                 history.push('/playlists');
             } else {
-                const errorData = await response.json();
-                setErrors({ submit: errorData.errorMessage });
+                setErrors({ submit: data.errorMessage || 'Failed to update account' });
             }
         } catch (error) {
             console.error("Error updating account:", error);
             setErrors({ submit: 'An error occurred while updating your account' });
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -161,7 +181,7 @@ export default function EditAccountScreen() {
                         </IconButton>
                     </Box>
                     <Typography variant="body2" color="text.secondary">
-                        Click camera icon to change avatar
+                        Click camera icon to change avatar (100x100 pixels)
                     </Typography>
                 </Box>
                 
@@ -178,6 +198,7 @@ export default function EditAccountScreen() {
                         onChange={handleChange('userName')}
                         error={!!errors.userName}
                         helperText={errors.userName}
+                        disabled={loading}
                     />
                     
                     <TextField
@@ -204,7 +225,8 @@ export default function EditAccountScreen() {
                         value={formData.password}
                         onChange={handleChange('password')}
                         error={!!errors.password}
-                        helperText={errors.password || "At least 8 characters"}
+                        helperText={errors.password || "Minimum 8 characters"}
+                        disabled={loading}
                     />
                     
                     <TextField
@@ -219,6 +241,7 @@ export default function EditAccountScreen() {
                         onChange={handleChange('passwordConfirm')}
                         error={!!errors.passwordConfirm}
                         helperText={errors.passwordConfirm}
+                        disabled={loading}
                     />
                     
                     {errors.submit && (
@@ -233,6 +256,7 @@ export default function EditAccountScreen() {
                             fullWidth
                             variant="outlined"
                             onClick={handleCancel}
+                            disabled={loading}
                         >
                             Cancel
                         </Button>
@@ -240,8 +264,9 @@ export default function EditAccountScreen() {
                             type="submit"
                             fullWidth
                             variant="contained"
+                            disabled={loading}
                         >
-                            Complete
+                            {loading ? 'Updating...' : 'Complete'}
                         </Button>
                     </Box>
                 </Box>

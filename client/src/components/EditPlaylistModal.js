@@ -15,6 +15,9 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import AddIcon from '@mui/icons-material/Add';
+import UndoIcon from '@mui/icons-material/Undo';
+import RedoIcon from '@mui/icons-material/Redo';
+import { useHistory } from 'react-router-dom';
 
 const modalStyle = {
     position: 'absolute',
@@ -34,8 +37,21 @@ const modalStyle = {
 export default function EditPlaylistModal() {
     const { store } = useContext(GlobalStoreContext);
     const { editPlaylistData } = store;
-    const [playlistName, setPlaylistName] = useState(editPlaylistData?.name || '');
-    const [editingSongIndex, setEditingSongIndex] = useState(-1);
+    const history = useHistory();
+
+    const [playlistName, setPlaylistName] = useState('');
+    const [originalName, setOriginalName] = useState('');
+
+    useEffect(() => {
+        if (editPlaylistData) {
+            setPlaylistName(editPlaylistData.name);
+            setOriginalName(editPlaylistData.name);
+
+            if (store.tps) {
+                store.tps.clearAllTransactions();
+            }
+        }
+    }, [editPlaylistData]);
 
     if (!editPlaylistData) return null;
 
@@ -44,13 +60,15 @@ export default function EditPlaylistModal() {
     };
 
     const handleSave = async () => {
-        if (playlistName !== editPlaylistData.name) {
-            await store.changeListName(editPlaylistData._id, playlistName);
+        if (playlistName !== originalName) {
+            await store.addEditPlaylistNameTransaction(editPlaylistData._id, originalName, playlistName);
         }
         handleClose();
     };
 
     const handleAddSong = () => {
+        store.setAddingToPlaylist(editPlaylistData._id);
+        handleClose();
         history.push('/songs');
     };
 
@@ -61,30 +79,24 @@ export default function EditPlaylistModal() {
 
     const handleDuplicateSong = async (index) => {
         const song = { ...editPlaylistData.songs[index] };
-        const newSongs = [...editPlaylistData.songs];
-        newSongs.splice(index + 1, 0, song);
-        
-        const updatedPlaylist = {
-            ...editPlaylistData,
-            songs: newSongs
-        };
-        
-        await store.updatePlaylist(editPlaylistData._id, updatedPlaylist);
+        store.addDuplicateSongTransaction(editPlaylistData._id, song, index + 1);
     };
 
     const handleDeleteSong = async (index) => {
-        if (window.confirm('Are you sure you want to remove this song from the playlist?')) {
-            const newSongs = [...editPlaylistData.songs];
-            newSongs.splice(index, 1);
-            
-            const updatedPlaylist = {
-                ...editPlaylistData,
-                songs: newSongs
-            };
-            
-            await store.updatePlaylist(editPlaylistData._id, updatedPlaylist);
-        }
+        const song = editPlaylistData.songs[index];
+        store.addRemoveSongFromPlaylistTransaction(editPlaylistData._id, song, index);
     };
+
+    const handleUndo = () => {
+        store.undo();
+    };
+
+    const handleRedo = () => {
+        store.redo();
+    };
+
+    const canUndo = store.tps && store.tps.hasTransactionToUndo();
+    const canRedo = store.tps && store.tps.hasTransactionToDo();
 
     return (
         <Modal
@@ -123,13 +135,15 @@ export default function EditPlaylistModal() {
                 </Box>
 
                 <List>
-                    {editPlaylistData.songs.map((song, index) => (
+                    {editPlaylistData.songs && editPlaylistData.songs.map((song, index) => (
                         <ListItem
                             key={index}
                             sx={{
-                                bgcolor: editingSongIndex === index ? 'action.selected' : 'transparent',
                                 borderRadius: 1,
-                                mb: 0.5
+                                mb: 0.5,
+                                '&:hover': {
+                                    bgcolor: 'action.hover'
+                                }
                             }}
                         >
                             <ListItemText
@@ -165,17 +179,36 @@ export default function EditPlaylistModal() {
                     ))}
                 </List>
 
-                <Box sx={{ mt: 3, display: 'flex', justifyContent: 'flex-end', gap: 2 }}>
-                    <Button onClick={handleClose} variant="outlined">
-                        Cancel
-                    </Button>
-                    <Button 
-                        onClick={handleSave} 
-                        variant="contained"
-                        disabled={!playlistName.trim()}
-                    >
-                        Save Changes
-                    </Button>
+                <Box sx={{ mt: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Box>
+                        <IconButton 
+                            onClick={handleUndo}
+                            disabled={!canUndo}
+                            title="Undo"
+                        >
+                            <UndoIcon />
+                        </IconButton>
+                        <IconButton 
+                            onClick={handleRedo}
+                            disabled={!canRedo}
+                            title="Redo"
+                        >
+                            <RedoIcon />
+                        </IconButton>
+                    </Box>
+                    
+                    <Box sx={{ display: 'flex', gap: 2 }}>
+                        <Button onClick={handleClose} variant="outlined">
+                            Cancel
+                        </Button>
+                        <Button 
+                            onClick={handleSave} 
+                            variant="contained"
+                            disabled={!playlistName.trim()}
+                        >
+                            Save Changes
+                        </Button>
+                    </Box>
                 </Box>
             </Box>
         </Modal>

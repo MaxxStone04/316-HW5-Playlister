@@ -26,7 +26,11 @@ export default function PlaylistsScreen() {
     };
 
     const handleSearch = () => {
-        store.searchPlaylists(searchParams);
+        if (store.isGuestMode) {
+            store.searchAllPlaylists(searchParams);
+        } else {
+            store.searchPlaylists(searchParams);
+        }
     };
 
     const handleClear = () => {

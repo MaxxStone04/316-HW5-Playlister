@@ -61,6 +61,19 @@ export default function AppBanner() {
             <MenuItem key="edit" onClick={handleEditAccount}>Edit Account</MenuItem>,
             <MenuItem key="logout" onClick={handleLogout}>Logout</MenuItem>
         ];
+    } else if (store.isGuestMode) {
+        menuItems = [
+            <MenuItem key="login" onClick={handleMenuClose}>
+                <Link to='/login/' style={{ textDecoration: 'none', color: 'inherit', width: '100%' }}>
+                    Login
+                </Link>
+            </MenuItem>,
+            <MenuItem key="register" onClick={handleMenuClose}>
+                <Link to='/register/' style={{ textDecoration: 'none', color: 'inherit', width: '100%' }}>
+                    Create Account
+                </Link>
+            </MenuItem>
+        ];
     } else {
         menuItems = [
             <MenuItem key="login" onClick={handleMenuClose}>

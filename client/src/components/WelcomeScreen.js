@@ -16,14 +16,18 @@ export default function WelcomeScreen() {
     const history = useHistory();
 
     const handleContinueGuest = () => {
+        store.setGuestMode(true);
+        auth.setGuestMode();
         history.push('/playlists');
     };
 
     const handleLogin = () => {
+        store.setGuestMode(false);
         history.push('/login');
     };
 
     const handleCreateAccount = () => {
+        store.setGuestMode(false);
         history.push('/register');
     };
 
