@@ -95,6 +95,71 @@ class MongoDBManager extends DatabaseManager {
         return await User.findOne({ email });
     }
 
+    async getUsersByPartialName(userName) {
+        await this.ensureInitialized();
+        return await User.find({
+            $or: [
+                { firstName: { $regex: userName, $options: 'i' } },
+                { lastName: { $regex: userName, options: 'i' } },
+                { usserName: { $regex: userName, $options: 'i' } } 
+            ]
+        });
+    }
+
+    async getPlaylistsByQuery(query) {
+        await this.ensureInitialized();
+        return await Playlist.find(query);
+    }
+
+    async getAllPlaylists() {
+        await this.ensureInitialized();
+        return await Playlist.find({});
+    }
+
+    async getSongsByQuery(query) {
+        await this.ensureInitialized();
+        return await Song.find(query); 
+    }
+
+    async getAllSongs() {
+        await this.ensureInitialized();
+        return await Song.find({})
+    }
+
+    async getSongByDetails(title, artist, year) {
+        await this.ensureInitialized();
+        return await Song.findOne({ title, artist, year });
+    }
+
+    async createSong(songData) {
+        await this.ensureInitialized();
+        const song = new Song(songData);
+        return await song.save();
+    }
+
+    async getSongsById(id) {
+        await this.ensureInitialized();
+        return await Song.findById(id);
+    }
+
+    async deleteSong(id) {
+        await this.ensureInitialized();
+        return await Song.findByIdAndDelete(id);
+    }
+
+    async removeSongFromAllPlaylists(songId) {
+        await this.ensureInitialized();
+
+        const playlists = await Playlist.find({ 'songs._id': songId });
+
+        for (let playlist of playlists) {
+            playlist.songs = playlist.songs.filter(song => song._id.toString() !== songId.toString());
+            await playlist.save();
+        }
+
+        return playlists.length;
+    }
+
     async updateUser(id, updateData) {
         await this.ensureInitialized();
         return await User.findByIdAndUpdate(id, updateData, {new : true });
