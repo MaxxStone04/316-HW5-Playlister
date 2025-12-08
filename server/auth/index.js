@@ -2,9 +2,6 @@ const jwt = require("jsonwebtoken")
 
 function authManager() {
     verify = (req, res, next) => {
-        console.log("req: " + JSON.stringify(req.headers));
-        console.log("next: " + next);
-        console.log("Who called verify?");
         try {
             const token = req.cookies.token;
             if (!token) {
@@ -15,8 +12,7 @@ function authManager() {
                 })
             }
 
-            const verified = jwt.verify(token, process.env.JWT_SECRET)
-            console.log("verified.userId: " + verified.userId);
+            const verified = jwt.verify(token, process.env.JWT_SECRET);
             
             req.userId = verified.userId;
 

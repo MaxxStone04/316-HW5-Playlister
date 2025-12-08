@@ -101,7 +101,7 @@ class MongoDBManager extends DatabaseManager {
             $or: [
                 { firstName: { $regex: userName, $options: 'i' } },
                 { lastName: { $regex: userName, options: 'i' } },
-                { usserName: { $regex: userName, $options: 'i' } } 
+                { userName: { $regex: userName, $options: 'i' } } 
             ]
         });
     }

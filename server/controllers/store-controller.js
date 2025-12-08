@@ -1,5 +1,4 @@
 const auth = require('../auth')
-
 const { createDatabaseManager } = require('../db/create-Database-Manager')
 const dbManager = createDatabaseManager();
 
@@ -244,38 +243,55 @@ updatePlaylist = async (req, res) => {
     }
 }
 
-searchPlaylist = async (req, res) => {
+searchPlaylists = async (req, res) => {
     if (auth.verifyUser(req) === null) {
         return res.status(401).json({
             success: false,
-            errorMessage: "Unauthorized User!"
+            errorMessage: 'UNAUTHORIZED'
         });
     }
-
+    
     const { name, userName, songTitle, songArtist, songYear } = req.body;
-
+    
     try {
+        // Get the logged-in user
+        const loggedInUser = await dbManager.getUserById(req.userId);
+        if (!loggedInUser) {
+            return res.status(401).json({
+                success: false,
+                errorMessage: 'User not found'
+            });
+        }
+        
         let query = {};
-
-        if (name) {
-            query.name = { $regex: name, $options: "i"};
+        
+        // Default: show user's own playlists when no search criteria
+        if (!name && !userName && !songTitle && !songArtist && !songYear) {
+            query.ownerEmail = loggedInUser.email;
+        } else {
+            // Build search query based on criteria
+            if (name) {
+                query.name = { $regex: name, $options: 'i' };
+            }
+            
+            if (userName) {
+                const users = await dbManager.getUsersByPartialName(userName);
+                const userEmails = users.map(u => u.email);
+                query.ownerEmail = { $in: userEmails };
+            }
+            
+            // For song-related searches, we need to look inside songs array
+            if (songTitle || songArtist || songYear) {
+                query['songs'] = { $exists: true, $ne: [] };
+            }
         }
-
-        if (userName) {
-            const users = await dbManager.getUsersByPartialName(userName);
-            const userEmails = users.map(user => user.email);
-            query.ownerEmail = { $in: userEmails };
-        }
-
-        if (songTitle || songArtist || songYear) {
-            query['songs'] = { $exists: true, $ne: [] };
-        }
-
+        
         let playlists = await dbManager.getPlaylistsByQuery(query);
-
+        
+        // Filter by song criteria if needed
         if (songTitle || songArtist || songYear) {
             playlists = playlists.filter(playlist => {
-                return playlist.songs.some(some => {
+                return playlist.songs.some(song => {
                     let matches = true;
                     if (songTitle) {
                         matches = matches && song.title.toLowerCase().includes(songTitle.toLowerCase());
@@ -290,12 +306,13 @@ searchPlaylist = async (req, res) => {
                 });
             });
         }
-
+        
         return res.status(200).json({
             success: true,
             playlists: playlists
         });
     } catch (error) {
+        console.error("Error searching playlists:", error);
         return res.status(400).json({
             success: false,
             errorMessage: error.message
@@ -310,30 +327,30 @@ searchSongs = async (req, res) => {
             errorMessage: 'Unauthorized User!'
         });
     }
-
+    
     const { title, artist, year } = req.body;
-
+    
     try {
-        let query = [];
-
+        let query = {};
+        
         if (title) {
             query.title = { $regex: title, $options: 'i' };
         }
         if (artist) {
             query.artist = { $regex: artist, $options: 'i' };
-        } 
+        }
         if (year) {
             query.year = year;
         }
-
+        
         const songs = await dbManager.getSongsByQuery(query);
-
+        
         return res.status(200).json({
             success: true,
             songs: songs
         });
-
     } catch (error) {
+        console.error("Error searching songs:", error);
         return res.status(400).json({
             success: false,
             errorMessage: error.message
@@ -345,33 +362,38 @@ sortPlaylists = async (req, res) => {
     if (auth.verifyUser(req) === null) {
         return res.status(401).json({
             success: false,
-            errorMessage: 'Unauthroized User!'
+            errorMessage: 'Unauthorized User!'
         });
     }
-
+    
     const { field, order } = req.body;
-
+    
     try {
         let playlists = await dbManager.getAllPlaylists();
-
+        
         playlists.sort((a, b) => {
             switch (field) {
                 case 'listeners':
                     return order === 'desc' ? (b.listeners - a.listeners) : (a.listeners - b.listeners);
                 case 'name':
-                    return order === 'desc' ? b.name.localCompare(a.name) : a.name.localCompare(b.name);
+                    return order === 'desc' ? 
+                        b.name.localeCompare(a.name) : 
+                        a.name.localeCompare(b.name);
                 case 'userName':
-                    return order === 'desc' ? b.ownerEmail.localCompare(a.ownerEmail) : a.ownerEmail.localCompare(b.ownerEmail);
+                    return order === 'desc' ? 
+                        b.ownerEmail.localeCompare(a.ownerEmail) : 
+                        a.ownerEmail.localeCompare(b.ownerEmail);
                 default:
                     return 0;
             }
         });
-
+        
         return res.status(200).json({
             success: true,
             playlists: playlists
         });
     } catch (error) {
+        console.error("Error sorting playlists:", error);
         return res.status(400).json({
             success: false,
             errorMessage: error.message
@@ -383,37 +405,42 @@ sortSongs = async (req, res) => {
     if (auth.verifyUser(req) === null) {
         return res.status(401).json({
             success: false,
-            errorMessage: 'Unauthroized User!'
+            errorMessage: 'UNAUTHORIZED'
         });
     }
-
+    
     const { field, order } = req.body;
-
+    
     try {
         let songs = await dbManager.getAllSongs();
-
+        
         songs.sort((a, b) => {
             switch (field) {
-                case 'listens': 
+                case 'listens':
                     return order === 'desc' ? (b.listens - a.listens) : (a.listens - b.listens);
                 case 'playlistCount':
                     return order === 'desc' ? (b.playlistCount - a.playlistCount) : (a.playlistCount - b.playlistCount);
                 case 'title':
-                    return order === 'desc' ? b.title.localCompare(a.title) : a.title.localCompare(b.title);
+                    return order === 'desc' ? 
+                        b.title.localeCompare(a.title) : 
+                        a.title.localeCompare(b.title);
                 case 'artist':
-                    return order === 'desc' ? b.artist.localCompare(a.artist) : a.artist.localCompare(b.artist);
+                    return order === 'desc' ? 
+                        b.artist.localeCompare(a.artist) : 
+                        a.artist.localeCompare(b.artist);
                 case 'year':
                     return order === 'desc' ? (b.year - a.year) : (a.year - b.year);
-                default: 
+                default:
                     return 0;
             }
         });
-
+        
         return res.status(200).json({
             success: true,
             songs: songs
         });
     } catch (error) {
+        console.error("Error sorting songs:", error);
         return res.status(400).json({
             success: false,
             errorMessage: error.message
@@ -425,7 +452,7 @@ dupPlaylist = async (req, res) => {
     if (auth.verifyUser(req) === null) {
         return res.status(401).json({
             success: false,
-            errorMessage: 'Unauthorized User!'
+            errorMessage: 'Unauthorized User'
         });
     }
     
@@ -453,8 +480,8 @@ dupPlaylist = async (req, res) => {
             success: true,
             playlist: newPlaylist
         });
-
     } catch (error) {
+        console.error("Error duplicating playlist:", error);
         return res.status(400).json({
             success: false,
             errorMessage: error.message
@@ -466,7 +493,7 @@ addSongToCatalog = async (req, res) => {
     if (auth.verifyUser(req) === null) {
         return res.status(401).json({
             success: false,
-            errorMessage: 'Unauthorized User!'
+            errorMessage: 'UNAUTHORIZED'
         });
     }
     
@@ -499,8 +526,8 @@ addSongToCatalog = async (req, res) => {
             success: true,
             song: newSong
         });
-
     } catch (error) {
+        console.error("Error adding song to catalog:", error);
         return res.status(400).json({
             success: false,
             errorMessage: error.message
@@ -512,7 +539,7 @@ removeSongFromCatalog = async (req, res) => {
     if (auth.verifyUser(req) === null) {
         return res.status(401).json({
             success: false,
-            errorMessage: 'Unauthorized User!'
+            errorMessage: 'UNAUTHORIZED'
         });
     }
     
@@ -521,7 +548,7 @@ removeSongFromCatalog = async (req, res) => {
         if (!song) {
             return res.status(404).json({
                 success: false,
-                errorMessage: 'The song was not found.'
+                errorMessage: 'Song not found'
             });
         }
         
@@ -535,14 +562,89 @@ removeSongFromCatalog = async (req, res) => {
         }
         
         await dbManager.removeSongFromAllPlaylists(song._id);
+        
         await dbManager.deleteSong(req.params.id);
         
         return res.status(200).json({
             success: true,
-            message: 'The song was removed from the catalog'
+            message: 'Song removed from catalog'
+        });
+    } catch (error) {
+        console.error("Error removing song from catalog:", error);
+        return res.status(400).json({
+            success: false,
+            errorMessage: error.message
+        });
+    }
+}
+
+searchAllPlaylists = async (req, res) => {
+    const { name, userName, songTitle, songArtist, songYear } = req.body;
+
+    try {
+        let query = {};
+
+        if (name) {
+            query.name = { $regex: name, $options: 'i'}
+        }
+
+        if (userName) {
+            const users = await dbManager.getUsersByPartialName(userName);
+            const userEmails = users.map(user => user.email);
+            query.ownerEmail = { $in: userEmails };
+        }
+
+        let playlists = await dbManager.getPlaylistsByQuery(query);
+
+        if (songTitle || songArtist || songYear) {
+            playlists = playlists.filter(playlister => {
+                if (!playlist.songs || playlist.songs.length === 0) {
+                    return false;
+                }
+
+                return playlist.songs.some(song => {
+                    let matches = true;
+                    if (songTitle) {
+                        matches = matches && song.title.toLowerCase().includes(songTitle.toLowerCase());
+                    }
+
+                    if (songArtist) {
+                        matches = matches && song.artist.toLowerCase().includes(songArtist.toLowerCase());
+                    }
+
+                    if (songYear) {
+                        matches = matches && song.year.toString().includes(songYear);
+                    }
+                    return matches;
+                });
+            });
+        }
+
+        return res.status(200).json({
+            success: true,
+            playlists: playlists
         });
 
     } catch (error) {
+        console.error("There was an error searching all the playlists: ", error);
+        return res.status(400).json({
+            success: false,
+            errorMessage: error.message
+        });
+    }
+}
+
+getAllPlaylists = async (req, res) => {
+    try {
+        const playlists = await dbManager.getAllPublicPlaylists();
+
+        return res.status(200).json({
+            success: true,
+            playlists: playlists
+        });
+        
+    } catch (error) {
+        console.error("There was an error getting all the playlists:", error);
         return res.status(400).json({
             success: false,
             errorMessage: error.message
@@ -563,5 +665,7 @@ module.exports = {
     sortSongs,
     dupPlaylist,
     addSongToCatalog,
-    removeSongFromCatalog
+    removeSongFromCatalog,
+    searchAllPlaylists,
+    getAllPlaylists
 };
