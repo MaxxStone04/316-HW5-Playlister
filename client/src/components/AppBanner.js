@@ -105,12 +105,6 @@ export default function AppBanner() {
             }}
             open={isMenuOpen}
             onClose={handleMenuClose}
-            PaperProps={{
-                sx: {
-                    mt: 1.5,
-                    minWidth: 180
-                }
-            }}
         >
             {menuItems}
         </Menu>
