@@ -354,18 +354,28 @@ function GlobalStoreContextProvider(props) {
                 body: JSON.stringify(searchParams),
                 credentials: 'include'
             });
-
+            
             if (response.ok) {
                 const data = await response.json();
                 storeReducer({
                     type: GlobalStoreActionType.SET_SONG_SEARCH_RESULTS,
-                    payload: { songs: data.songs }
+                    payload: { songs: data.songs || [] }
+                });
+            } else {
+                console.error("Failed to search songs:", response.status);
+                storeReducer({
+                    type: GlobalStoreActionType.SET_SONG_SEARCH_RESULTS,
+                    payload: { songs: [] }
                 });
             }
         } catch (error) {
-            console.error("Error searching for songs with that query", error);
+            console.error("Error searching songs:", error);
+            storeReducer({
+                type: GlobalStoreActionType.SET_SONG_SEARCH_RESULTS,
+                payload: { songs: [] }
+            });
         }
-    }
+    };
 
     store.sortPlaylists = async function (sortType) {
         try {
@@ -702,6 +712,10 @@ function GlobalStoreContextProvider(props) {
         }
     }
 
+    store.loadAllSongs = async function () {
+        await this.searchSongs({});
+    }
+
     store.tryAcessingOtherAccountPlaylist = function(){
         let id = "635f203d2e072037af2e6284";
         async function asyncSetCurrentList(id) {
@@ -790,30 +804,33 @@ function GlobalStoreContextProvider(props) {
 
     // THIS FUNCTION LOADS ALL THE ID, NAME PAIRS SO WE CAN LIST ALL THE LISTS
     store.loadIdNamePairs = function () {
-        if (store.isGuest) {
-            storeReducer({
-                type: GlobalStoreActionType.LOAD_ID_NAME_PAIRS,
-                payload: []
-            });
-            return;
-        }
-
         async function asyncLoadIdNamePairs() {
-            const response = await storeRequestSender.getPlaylistPairs();
-            if (response.data.success) {
-                let pairsArray = response.data.idNamePairs;
-                console.log(pairsArray);
+            try {
+                const response = await storeRequestSender.getPlaylistPairs();
+                if (response.data.success) {
+                    let pairsArray = response.data.idNamePairs || [];
+                    console.log("Loaded playlist pairs:", pairsArray);
+                    storeReducer({
+                        type: GlobalStoreActionType.LOAD_ID_NAME_PAIRS,
+                        payload: pairsArray
+                    });
+                } else {
+                    console.log("FAILED TO GET THE LIST PAIRS");
+                    storeReducer({
+                        type: GlobalStoreActionType.LOAD_ID_NAME_PAIRS,
+                        payload: []
+                    });
+                }
+            } catch (error) {
+                console.error("Error loading playlist pairs:", error);
                 storeReducer({
                     type: GlobalStoreActionType.LOAD_ID_NAME_PAIRS,
-                    payload: pairsArray
+                    payload: []
                 });
-            }
-            else {
-                console.log("FAILED TO GET THE LIST PAIRS");
             }
         }
         asyncLoadIdNamePairs();
-    }
+    };
 
     // THE FOLLOWING 5 FUNCTIONS ARE FOR COORDINATING THE DELETION
     // OF A LIST, WHICH INCLUDES USING A VERIFICATION MODAL. THE
@@ -857,11 +874,13 @@ function GlobalStoreContextProvider(props) {
         });        
     }
     store.hideModals = () => {
-        auth.errorMessage = null;
-        storeReducer({
-            type: GlobalStoreActionType.HIDE_MODALS,
-            payload: {}
-        });    
+        setStore({
+            ...store,
+            currentModa: CurrentModal.NONE,
+            currentSongIndex: -1,
+            currentSong: null,
+            sontToRemove: null
+        });   
     }
     store.isDeleteListModalOpen = () => {
         return store.currentModal === CurrentModal.DELETE_LIST;

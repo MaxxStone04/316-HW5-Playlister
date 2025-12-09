@@ -12,10 +12,13 @@ import Select from '@mui/material/Select';
 import MenuItem from '@mui/material/MenuItem';
 import FormControl from '@mui/material/FormControl';
 import InputLabel from '@mui/material/InputLabel';
+import InputAdornment from '@mui/material/InputAdornment';
+import IconButton from '@mui/material/IconButton';
 import SearchIcon from '@mui/icons-material/Search';
 import ClearIcon from '@mui/icons-material/Clear';
 import AddIcon from '@mui/icons-material/Add';
-import youTubePlayer from './youTubePlayer';
+import CloseIcon from '@mui/icons-material/Close';
+import YouTubePlayer from './YouTubePlayer';
 
 export default function SongsCatalogScreen() {
     const { store } = useContext(GlobalStoreContext);
@@ -38,7 +41,7 @@ export default function SongsCatalogScreen() {
         try {
             await store.searchSongs({});
         } catch (error) {
-            console.error("Error loading songs:", error);
+            console.error("There was an error loading songs: ", error);
         } finally {
             setLoading(false);
         }
@@ -48,6 +51,13 @@ export default function SongsCatalogScreen() {
         setSearchParams({
             ...searchParams,
             [field]: value
+        });
+    };
+
+    const handleClearField = (field) => {
+        setSearchParams({
+            ...searchParams,
+            [field]: ''
         });
     };
 
@@ -93,106 +103,239 @@ export default function SongsCatalogScreen() {
     };
 
     return (
-        <Box sx={{ display: 'flex', height: 'calc(100vh - 64px)' }}>
+        <Box sx={{ 
+            display: 'flex', 
+            height: 'calc(100vh - 64px)',
+            bgcolor: '#FFFFE4'
+        }}>
+            {/* Left Panel - Search & Player */}
             <Box sx={{ 
-                width: '30%', 
-                p: 3, 
-                borderRight: 1, 
-                borderColor: 'divider',
-                bgcolor: 'background.paper',
+                width: '35%', 
+                p: 3,
                 display: 'flex',
-                flexDirection: 'column'
+                flexDirection: 'column',
+                position: 'relative' // For positioning New Song button
             }}>
-                <Typography variant="h6" gutterBottom>
+                {/* Header */}
+                <Typography 
+                    variant="h6" 
+                    gutterBottom
+                    sx={{ 
+                        fontWeight: 'bold',
+                        color: '#C20CB9',
+                        mb: 3
+                    }}
+                >
                     Songs Catalog
                 </Typography>
                 
-                <TextField
-                    label="by Title"
-                    fullWidth
-                    margin="normal"
-                    value={searchParams.title}
-                    onChange={(e) => handleSearchChange('title', e.target.value)}
-                    onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-                />
+                {/* Search Boxes */}
+                <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
+                    <TextField
+                        placeholder="by Title"
+                        fullWidth
+                        value={searchParams.title}
+                        onChange={(e) => handleSearchChange('title', e.target.value)}
+                        onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+                        sx={{
+                            '& .MuiOutlinedInput-root': {
+                                bgcolor: '#E6E0E9',
+                                borderRadius: '50px',
+                                '& fieldset': {
+                                    border: 'none'
+                                }
+                            }
+                        }}
+                        InputProps={{
+                            endAdornment: searchParams.title && (
+                                <InputAdornment position="end">
+                                    <IconButton
+                                        size="small"
+                                        onClick={() => handleClearField('title')}
+                                        edge="end"
+                                    >
+                                        <CloseIcon fontSize="small" />
+                                    </IconButton>
+                                </InputAdornment>
+                            ),
+                        }}
+                    />
+                </Box>
                 
-                <TextField
-                    label="by Artist"
-                    fullWidth
-                    margin="normal"
-                    value={searchParams.artist}
-                    onChange={(e) => handleSearchChange('artist', e.target.value)}
-                    onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-                />
+                <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
+                    <TextField
+                        placeholder="by Artist"
+                        fullWidth
+                        value={searchParams.artist}
+                        onChange={(e) => handleSearchChange('artist', e.target.value)}
+                        onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+                        sx={{
+                            '& .MuiOutlinedInput-root': {
+                                bgcolor: '#E6E0E9',
+                                borderRadius: '50px',
+                                '& fieldset': {
+                                    border: 'none'
+                                }
+                            }
+                        }}
+                        InputProps={{
+                            endAdornment: searchParams.artist && (
+                                <InputAdornment position="end">
+                                    <IconButton
+                                        size="small"
+                                        onClick={() => handleClearField('artist')}
+                                        edge="end"
+                                    >
+                                        <CloseIcon fontSize="small" />
+                                    </IconButton>
+                                </InputAdornment>
+                            ),
+                        }}
+                    />
+                </Box>
                 
-                <TextField
-                    label="by Year"
-                    fullWidth
-                    margin="normal"
-                    value={searchParams.year}
-                    onChange={(e) => handleSearchChange('year', e.target.value)}
-                    onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-                    type="number"
-                />
+                <Box sx={{ display: 'flex', gap: 2, mb: 3 }}>
+                    <TextField
+                        placeholder="by Year"
+                        fullWidth
+                        value={searchParams.year}
+                        onChange={(e) => handleSearchChange('year', e.target.value)}
+                        onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+                        sx={{
+                            '& .MuiOutlinedInput-root': {
+                                bgcolor: '#E6E0E9',
+                                borderRadius: '50px',
+                                '& fieldset': {
+                                    border: 'none'
+                                }
+                            }
+                        }}
+                        InputProps={{
+                            endAdornment: searchParams.year && (
+                                <InputAdornment position="end">
+                                    <IconButton
+                                        size="small"
+                                        onClick={() => handleClearField('year')}
+                                        edge="end"
+                                    >
+                                        <CloseIcon fontSize="small" />
+                                    </IconButton>
+                                </InputAdornment>
+                            ),
+                        }}
+                    />
+                </Box>
                 
-                <Box sx={{ mt: 2, display: 'flex', gap: 2 }}>
+                {/* Search and Clear Buttons */}
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
                     <Button
                         variant="contained"
                         startIcon={<SearchIcon />}
                         onClick={handleSearch}
-                        fullWidth
                         disabled={loading}
+                        sx={{
+                            bgcolor: '#6750A4',
+                            borderRadius: '50px',
+                            px: 3,
+                            '&:hover': {
+                                bgcolor: '#5A4790'
+                            }
+                        }}
                     >
                         {loading ? 'Searching...' : 'Search'}
                     </Button>
+                    
                     <Button
-                        variant="outlined"
-                        startIcon={<ClearIcon />}
+                        variant="contained"
                         onClick={handleClear}
-                        fullWidth
                         disabled={loading}
+                        sx={{
+                            bgcolor: '#6750A4',
+                            borderRadius: '50px',
+                            px: 3,
+                            '&:hover': {
+                                bgcolor: '#5A4790'
+                            }
+                        }}
                     >
                         Clear
                     </Button>
                 </Box>
 
-                <Box sx={{ mt: 4, flexGrow: 1 }}>
-                    <Typography variant="subtitle1" gutterBottom>
-                        Preview
-                    </Typography>
+                {/* YouTube Player */}
+                <Box sx={{ 
+                    mt: 2, 
+                    flexGrow: 1,
+                    display: 'flex',
+                    flexDirection: 'column'
+                }}>
                     {selectedSong ? (
-                        <Box>
-                            <Typography variant="body1" gutterBottom>
-                                <strong>{selectedSong.title}</strong> by {selectedSong.artist}
-                            </Typography>
-                            <youTubePlayer 
-                                videoId={selectedSong.youTubeId}
-                                key={selectedSong._id} 
-                            />
-                        </Box>
+                        <YouTubePlayer 
+                            videoId={selectedSong.youTubeId}
+                            key={selectedSong._id}
+                        />
                     ) : (
                         <Box sx={{ 
-                            height: 200, 
+                            height: '100%', 
                             display: 'flex', 
+                            flexDirection: 'column',
                             alignItems: 'center', 
                             justifyContent: 'center',
                             bgcolor: 'grey.100',
                             borderRadius: 1
                         }}>
-                            <Typography color="text.secondary">
+                            <Typography 
+                                variant="subtitle1" 
+                                color="text.secondary"
+                                sx={{ mb: 1 }}
+                            >
+                                No song selected
+                            </Typography>
+                            <Typography variant="body2" color="text.secondary">
                                 Select a song to preview
                             </Typography>
                         </Box>
                     )}
                 </Box>
+
+                {/* New Song Button - Fixed to bottom next to divider */}
+                {auth.loggedIn && (
+                    <Button
+                        variant="contained"
+                        startIcon={<AddIcon />}
+                        onClick={handleNewSong}
+                        sx={{
+                            position: 'absolute',
+                            right: 16,
+                            bottom: 16,
+                            bgcolor: '#6750A4',
+                            borderRadius: '50px',
+                            px: 3,
+                            '&:hover': {
+                                bgcolor: '#5A4790'
+                            }
+                        }}
+                    >
+                        New Song
+                    </Button>
+                )}
             </Box>
             
+            {/* Vertical Divider */}
             <Box sx={{ 
-                width: '70%', 
+                width: '1px', 
+                bgcolor: '#E0E0E0',
+                my: 2
+            }} />
+            
+            {/* Right Panel - Results */}
+            <Box sx={{ 
+                width: '64%', 
                 p: 3,
                 overflow: 'auto',
                 position: 'relative'
             }}>
+                {/* Header with Sort and Song Count */}
                 <Box sx={{ 
                     display: 'flex', 
                     justifyContent: 'space-between',
@@ -201,20 +344,28 @@ export default function SongsCatalogScreen() {
                     position: 'sticky',
                     top: 0,
                     zIndex: 10,
-                    bgcolor: 'background.paper',
-                    py: 1
+                    bgcolor: '#FFFFE4',
+                    py: 1,
+                    pr: 2
                 }}>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                        <Typography variant="h6">
+                        <Typography 
+                            variant="h6"
+                            sx={{ color: '#C20CB9' }}
+                        >
                             Sort: 
                         </Typography>
                         <FormControl size="small" sx={{ minWidth: 180 }}>
-                            <InputLabel id="sort-select-label">Sort By</InputLabel>
                             <Select
-                                labelId="sort-select-label"
                                 value={store.songSort || 'listens-hi-lo'}
                                 onChange={handleSortChange}
-                                label="Sort By"
+                                sx={{
+                                    bgcolor: 'white',
+                                    borderRadius: '20px',
+                                    '& .MuiOutlinedInput-notchedOutline': {
+                                        borderColor: '#6750A4'
+                                    }
+                                }}
                             >
                                 <MenuItem value="listens-hi-lo">Listens (Hi-Lo)</MenuItem>
                                 <MenuItem value="listens-lo-hi">Listens (Lo-Hi)</MenuItem>
@@ -230,28 +381,22 @@ export default function SongsCatalogScreen() {
                         </FormControl>
                     </Box>
                     
-                    <Typography variant="subtitle1">
+                    <Typography 
+                        variant="subtitle1"
+                        sx={{ color: '#C20CB9', fontWeight: 'bold' }}
+                    >
                         {loading ? 'Loading...' : `${store.currentSongs?.length || 0} Songs`}
                     </Typography>
-                    
-                    {auth.loggedIn && (
-                        <Fab 
-                            color="primary" 
-                            aria-label="add new song"
-                            size="medium"
-                            onClick={handleNewSong}
-                        >
-                            <AddIcon />
-                        </Fab>
-                    )}
                 </Box>
                 
+                {/* Loading State */}
                 {loading && (
                     <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
                         <Typography>Loading songs...</Typography>
                     </Box>
                 )}
                 
+                {/* No Results */}
                 {!loading && (!store.currentSongs || store.currentSongs.length === 0) && (
                     <Box sx={{ 
                         display: 'flex', 
@@ -269,6 +414,7 @@ export default function SongsCatalogScreen() {
                     </Box>
                 )}
                 
+                {/* Song cards */}
                 {!loading && store.currentSongs?.map((song, index) => (
                     <SongCatalogCard 
                         key={song._id || index}
@@ -280,6 +426,7 @@ export default function SongsCatalogScreen() {
                 ))}
             </Box>
             
+            {/* New Song Modal */}
             {showNewSongModal && (
                 <NewSongModal
                     open={showNewSongModal}
@@ -287,7 +434,6 @@ export default function SongsCatalogScreen() {
                     onSongAdded={handleSongAdded}
                 />
             )}
-            
         </Box>
     );
 }

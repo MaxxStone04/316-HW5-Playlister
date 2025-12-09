@@ -23,7 +23,7 @@ import SongCatalogCard from './SongCatalogCard'
 import SplashScreen from './SplashScreen'
 import Statusbar from './Statusbar'
 import WorkspaceScreen from './WorkspaceScreen'
-import youTubePlayer from './youTubePlayer'
+import YouTubePlayer from './YouTubePlayer'
 /*
     This serves as a module so that we can import
     all the other components as we wish.
@@ -56,4 +56,4 @@ export {
     SplashScreen,
     Statusbar, 
     WorkspaceScreen,
-    youTubePlayer }
+    YouTubePlayer }

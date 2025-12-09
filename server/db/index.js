@@ -68,6 +68,22 @@ class DatabaseManager {
     async getPlaylistPairsByOwnerEmail(ownerEmail) {
         throw new Error("To be Implemented!");
     }
+
+    async searchSongs(query) {
+        throw new Error("To be Implemented!");
+    }
+
+    async incrementSongPlaylistCount(songId) {
+        throw new Error("To be Implemented!");
+    }
+
+    async incrementSongListens(songId) {
+        throw new Error("To be Implemented!");
+    }
+
+    async getSongsByOwnerEmail(ownerEmail) {
+        throw new Error("To be Implemented!");
+    }
 }
 
 

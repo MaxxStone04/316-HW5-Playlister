@@ -1,38 +1,43 @@
-import { useContext, useState } from 'react';
+import { useContext, useState, useEffect } from 'react';
 import { GlobalStoreContext } from '../store';
 import AuthContext from '../auth';
+import SongMenu from './SongMenu';
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
-import Menu from '@mui/material/Menu';
-import MenuItem from '@mui/material/MenuItem';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
+import { styled } from '@mui/material/styles';
+
+const StyledCard = styled(Card)(({ isselected, isowned }) => ({
+    backgroundColor: isselected === 'true' ? '#FFD466' : '#FFF7B2',
+    borderRadius: '12px',
+    marginBottom: '12px',
+    cursor: 'pointer',
+    border: isowned === 'true' ? '2px solid #6750A4' : 'none',
+    '&:hover': {
+        boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
+        transform: 'translateY(-2px)',
+        transition: 'all 0.2s ease-in-out'
+    }
+}));
 
 export default function SongCatalogCard({ song, onSelect, isSelected, index }) {
     const { store } = useContext(GlobalStoreContext);
     const { auth } = useContext(AuthContext);
     const [anchorEl, setAnchorEl] = useState(null);
-    const [playlistAnchorEl, setPlaylistAnchorEl] = useState(null);
     const [playlists, setPlaylists] = useState([]);
     
     const open = Boolean(anchorEl);
-    const playlistMenuOpen = Boolean(playlistAnchorEl);
 
-    const handleClick = (event) => {
-        event.stopPropagation();
-        setAnchorEl(event.currentTarget);
-    };
+    useEffect(() => {
+        if (auth.loggedIn) {
+            loadUserPlaylists();
+        }
+    }, [auth.loggedIn]);
 
-    const handleClose = () => {
-        setAnchorEl(null);
-        setPlaylistAnchorEl(null);
-    };
-
-    const handleAddToPlaylistClick = async (event) => {
-        event.stopPropagation();
-        
+    const loadUserPlaylists = async () => {
         try {
             const response = await fetch('http://localhost:4000/store/playlistpairs', {
                 credentials: 'include'
@@ -42,30 +47,35 @@ export default function SongCatalogCard({ song, onSelect, isSelected, index }) {
                 const data = await response.json();
                 if (data.success) {
                     setPlaylists(data.idNamePairs);
-                    setPlaylistAnchorEl(event.currentTarget);
                 }
             }
         } catch (error) {
             console.error("Error fetching playlists:", error);
         }
-        
+    };
+
+    const handleMenuClick = (event) => {
+        event.stopPropagation();
+        setAnchorEl(event.currentTarget);
+    };
+
+    const handleCloseMenu = () => {
         setAnchorEl(null);
     };
 
-    const handleEditSong = (event) => {
-        event.stopPropagation();
+    const handleEditSong = () => {
+        // Show the edit song modal using the store
         store.showEditSongModal(index, song);
-        handleClose();
     };
 
-    const handleRemoveSong = (event) => {
-        event.stopPropagation();
+    const handleRemoveSong = () => {
+        // Show the remove song modal using the store
         store.showRemoveSongModal(song._id, song);
-        handleClose();
     };
 
-    const handleAddToSpecificPlaylist = async (playlistId) => {
+    const handleAddToPlaylist = async (playlistId, playlistName) => {
         try {
+            // First get the current playlist
             const response = await fetch(`http://localhost:4000/store/playlist/${playlistId}`, {
                 credentials: 'include'
             });
@@ -75,6 +85,7 @@ export default function SongCatalogCard({ song, onSelect, isSelected, index }) {
                 if (data.success) {
                     const playlist = data.playlist;
                     
+                    // Check if song already exists in this playlist
                     const songExists = playlist.songs.some(
                         s => s.title === song.title && 
                              s.artist === song.artist && 
@@ -82,6 +93,7 @@ export default function SongCatalogCard({ song, onSelect, isSelected, index }) {
                     );
                     
                     if (!songExists) {
+                        // Create updated playlist with new song
                         const updatedPlaylist = {
                             ...playlist,
                             songs: [...playlist.songs, {
@@ -92,6 +104,7 @@ export default function SongCatalogCard({ song, onSelect, isSelected, index }) {
                             }]
                         };
                         
+                        // Update the playlist on server
                         const updateResponse = await fetch(`http://localhost:4000/store/playlist/${playlistId}`, {
                             method: 'PUT',
                             headers: {
@@ -104,150 +117,117 @@ export default function SongCatalogCard({ song, onSelect, isSelected, index }) {
                         });
                         
                         if (updateResponse.ok) {
-                            console.log("Song added to playlist successfully");
+                            // Show success message
+                            alert(`"${song.title}" added to "${playlistName}" playlist!`);
                             
-                            await fetch(`http://localhost:4000/store/songs/${song._id}/increment-count`, {
-                                method: 'PUT',
-                                credentials: 'include'
-                            });
+                            // Update song's playlist count if endpoint exists
+                            try {
+                                await fetch(`http://localhost:4000/store/songs/${song._id}/increment-playlist-count`, {
+                                    method: 'PUT',
+                                    credentials: 'include'
+                                });
+                            } catch (err) {
+                                console.log("Note: Playlist count endpoint not implemented yet");
+                            }
+                        } else {
+                            alert("Failed to add song to playlist. Please try again.");
                         }
                     } else {
-                        console.log("Song already exists in playlist");
+                        alert(`"${song.title}" already exists in "${playlistName}" playlist`);
                     }
                 }
             }
         } catch (error) {
             console.error("Error adding song to playlist:", error);
+            alert("Error adding song to playlist. Please try again.");
         }
-        
-        handleClose();
     };
 
     const isOwnedByUser = auth.user && song.ownerEmail === auth.user.email;
 
     return (
-        <Card 
-            sx={{ 
-                mb: 2, 
-                cursor: 'pointer',
-                border: isSelected ? 2 : 0,
-                borderColor: 'primary.main',
-                '&:hover': {
-                    bgcolor: 'action.hover'
-                },
-                position: 'relative'
-            }}
-            onClick={() => onSelect(song)}
-        >
-            {isOwnedByUser && (
-                <Box
-                    sx={{
-                        position: 'absolute',
-                        top: 0,
-                        left: 0,
-                        right: 0,
-                        height: 3,
-                        bgcolor: 'primary.main',
-                        borderRadius: '4px 4px 0 0'
-                    }}
-                />
-            )}
-            
-            <CardContent>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                    <Box sx={{ flex: 1 }}>
-                        <Typography variant="h6" component="div">
-                            {song.title}
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary">
-                            by {song.artist} ({song.year})
-                        </Typography>
-                        <Box sx={{ display: 'flex', gap: 3, mt: 1 }}>
-                            <Typography variant="body2">
-                                <strong>Listens:</strong> {song.listenCount || 0}
+        <>
+            <StyledCard 
+                isselected={isSelected.toString()}
+                isowned={isOwnedByUser.toString()}
+                onClick={() => onSelect(song)}
+            >
+                <CardContent sx={{ p: 2, pb: '8px !important' }}>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                        {/* Song Info */}
+                        <Box sx={{ flex: 1 }}>
+                            <Typography 
+                                variant="h6" 
+                                component="div"
+                                sx={{ 
+                                    fontWeight: 'bold',
+                                    color: '#1E1E1E',
+                                    mb: 0.5
+                                }}
+                            >
+                                {song.title} by {song.artist} ({song.year})
                             </Typography>
-                            <Typography variant="body2">
-                                <strong>In Playlists:</strong> {song.playlistCount || 0}
-                            </Typography>
-                            {song.ownerEmail && (
-                                <Typography variant="body2" color="text.secondary">
-                                    <strong>Added by:</strong> {song.ownerEmail}
+                            
+                            {/* Listens and Playlists Count */}
+                            <Box sx={{ 
+                                display: 'flex', 
+                                justifyContent: 'space-between',
+                                alignItems: 'center',
+                                mt: 1
+                            }}>
+                                <Typography 
+                                    variant="body2"
+                                    sx={{ 
+                                        fontWeight: 'medium',
+                                        color: '#5D5D5D'
+                                    }}
+                                >
+                                    Listens: {song.listenCount || song.listens || 0}
                                 </Typography>
-                            )}
+                                
+                                <Typography 
+                                    variant="body2"
+                                    sx={{ 
+                                        fontWeight: 'medium',
+                                        color: '#5D5D5D'
+                                    }}
+                                >
+                                    Playlists: {song.playlistCount || 0}
+                                </Typography>
+                            </Box>
                         </Box>
+                        
+                        {/* Ellipsis Menu Button - only show if logged in */}
+                        {auth.loggedIn && (
+                            <IconButton
+                                aria-label="song actions"
+                                onClick={handleMenuClick}
+                                size="small"
+                                sx={{
+                                    color: '#6750A4',
+                                    '&:hover': {
+                                        backgroundColor: 'rgba(103, 80, 164, 0.1)'
+                                    }
+                                }}
+                            >
+                                <MoreVertIcon />
+                            </IconButton>
+                        )}
                     </Box>
-                    
-                    {auth.loggedIn && (
-                        <IconButton
-                            aria-label="more"
-                            aria-controls={open ? 'song-menu' : undefined}
-                            aria-haspopup="true"
-                            aria-expanded={open ? 'true' : undefined}
-                            onClick={handleClick}
-                            size="small"
-                        >
-                            <MoreVertIcon />
-                        </IconButton>
-                    )}
-                </Box>
-            </CardContent>
+                </CardContent>
+            </StyledCard>
             
-            <Menu
-                id="song-menu"
+            {/* Custom Menu Component */}
+            <SongMenu
                 anchorEl={anchorEl}
                 open={open}
-                onClose={handleClose}
-                MenuListProps={{
-                    'aria-labelledby': 'basic-button',
-                }}
-            >
-                <MenuItem 
-                    onClick={handleAddToPlaylistClick}
-                    onMouseEnter={handleAddToPlaylistClick}
-                >
-                    Add to Playlist
-                </MenuItem>
-                {isOwnedByUser && (
-                    <>
-                        <MenuItem onClick={handleEditSong}>
-                            Edit Song
-                        </MenuItem>
-                        <MenuItem onClick={handleRemoveSong}>
-                            Remove from Catalog
-                        </MenuItem>
-                    </>
-                )}
-            </Menu>
-            
-            <Menu
-                id="playlist-submenu"
-                anchorEl={playlistAnchorEl}
-                open={playlistMenuOpen}
-                onClose={handleClose}
-                anchorOrigin={{
-                    vertical: 'top',
-                    horizontal: 'right',
-                }}
-                transformOrigin={{
-                    vertical: 'top',
-                    horizontal: 'left',
-                }}
-            >
-                {playlists.length > 0 ? (
-                    playlists.map((playlist) => (
-                        <MenuItem 
-                            key={playlist._id}
-                            onClick={() => handleAddToSpecificPlaylist(playlist._id)}
-                        >
-                            {playlist.name}
-                        </MenuItem>
-                    ))
-                ) : (
-                    <MenuItem disabled>
-                        No playlists found
-                    </MenuItem>
-                )}
-            </Menu>
-        </Card>
+                onClose={handleCloseMenu}
+                song={song}
+                playlists={playlists}
+                onEdit={handleEditSong}
+                onRemove={handleRemoveSong}
+                onAddToPlaylist={handleAddToPlaylist}
+            />
+        </>
     );
 }

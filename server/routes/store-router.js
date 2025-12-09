@@ -1,9 +1,14 @@
+/*
+    This is where we'll route all of the received http requests
+    into controller response functions.
+    
+    @author McKilla Gorilla
+*/
 const express = require('express')
 const StoreController = require('../controllers/store-controller')
 const router = express.Router()
 const auth = require('../auth')
 
-// Existing routes
 router.post('/playlist', auth.verify, StoreController.createPlaylist)
 router.delete('/playlist/:id', auth.verify, StoreController.deletePlaylist)
 router.get('/playlist/:id', auth.verify, StoreController.getPlaylistById)
@@ -11,15 +16,17 @@ router.get('/playlistpairs', auth.verify, StoreController.getPlaylistPairs)
 router.get('/playlists', auth.verify, StoreController.getPlaylists)
 router.put('/playlist/:id', auth.verify, StoreController.updatePlaylist)
 
-// New routes for guest access
-router.get('/all-playlists', StoreController.getAllPlaylists)
-router.post('/all-playlists/search', StoreController.searchAllPlaylists)
+// New HW5 endpoints
 router.post('/playlists/search', auth.verify, StoreController.searchPlaylists)
-router.post('/songs/search', auth.verify, StoreController.searchSongs)
+router.post('/songs/search', StoreController.searchSongs) // Allow guests
 router.post('/playlists/sort', auth.verify, StoreController.sortPlaylists)
 router.post('/songs/sort', auth.verify, StoreController.sortSongs)
 router.post('/playlist/:id/dup', auth.verify, StoreController.dupPlaylist)
 router.post('/songs', auth.verify, StoreController.addSongToCatalog)
 router.delete('/songs/:id', auth.verify, StoreController.removeSongFromCatalog)
+router.put('/songs/:id/increment-playlist-count', auth.verify, StoreController.incrementPlaylistCount)
+router.put('/songs/:id/increment-listens', StoreController.incrementSongListens) // Allow guests
+router.post('/playlists/search/all', StoreController.searchAllPlaylists) // Allow guests
+router.get('/playlists/all', StoreController.getAllPlaylists) // Allow guests
 
 module.exports = router

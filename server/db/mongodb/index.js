@@ -2,6 +2,7 @@ const DatabaseManager = require('../index');
 const mongoose = require('mongoose');
 const User = require('../../models/user-model');
 const Playlist = require('../../models/playlist-model');
+const Song = require('../../models/song-model');
 
 class MongoDBManager extends DatabaseManager {
     constructor() {
@@ -53,6 +54,7 @@ class MongoDBManager extends DatabaseManager {
         try {
             await User.deleteMany({});
             await Playlist.deleteMany({});
+            await Song.deleteMany({});
             console.log('MongoDB database cleared');
         } catch(error) {
             console.error('Error clearing MongoDB Database:', error);
@@ -121,11 +123,6 @@ class MongoDBManager extends DatabaseManager {
         return await Song.find(query); 
     }
 
-    async getAllSongs() {
-        await this.ensureInitialized();
-        return await Song.find({})
-    }
-
     async getSongByDetails(title, artist, year) {
         await this.ensureInitialized();
         return await Song.findOne({ title, artist, year });
@@ -137,9 +134,19 @@ class MongoDBManager extends DatabaseManager {
         return await song.save();
     }
 
-    async getSongsById(id) {
+    async getSongById(id) {
         await this.ensureInitialized();
         return await Song.findById(id);
+    }
+
+    async getAllSongs() {
+        await this.ensureInitialized();
+        return await Song.find({});
+    }
+
+    async updateSong(id, updateData) {
+        await this.ensureInitialized();
+        return await Song.findByIdAndUpdate(id, updateData, { new: true });
     }
 
     async deleteSong(id) {
@@ -149,15 +156,58 @@ class MongoDBManager extends DatabaseManager {
 
     async removeSongFromAllPlaylists(songId) {
         await this.ensureInitialized();
-
+        
+        // Find all playlists containing this song
         const playlists = await Playlist.find({ 'songs._id': songId });
-
+        
+        // Update each playlist to remove the song
         for (let playlist of playlists) {
-            playlist.songs = playlist.songs.filter(song => song._id.toString() !== songId.toString());
+            // Filter out the song
+            playlist.songs = playlist.songs.filter(song => {
+                // Handle both string and ObjectId comparisons
+                const songIdStr = songId.toString ? songId.toString() : songId;
+                const songIdInPlaylist = song._id ? song._id.toString() : song;
+                return songIdInPlaylist !== songIdStr;
+            });
             await playlist.save();
+            
+            // Decrement playlistCount on the song
+            const song = await Song.findById(songId);
+            if (song) {
+                song.playlistCount = Math.max(0, (song.playlistCount || 0) - 1);
+                await song.save();
+            }
         }
-
+        
         return playlists.length;
+    }
+
+    async incrementSongPlaylistCount(songId) {
+        await this.ensureInitialized();
+        return await Song.findByIdAndUpdate(
+            songId,
+            { $inc: { playlistCount: 1 } },
+            { new: true }
+        );
+    }
+
+    async incrementSongListens(songId) {
+        await this.ensureInitialized();
+        return await Song.findByIdAndUpdate(
+            songId,
+            { $inc: { listens: 1 } },
+            { new: true }
+        );
+    }
+
+    async getSongsByOwnerEmail(ownerEmail) {
+        await this.ensureInitialized();
+        return await Song.find({ ownerEmail });
+    }
+
+    async searchSongs(query) {
+        await this.ensureInitialized();
+        return await Song.find(query);
     }
 
     async updateUser(id, updateData) {
@@ -215,28 +265,9 @@ class MongoDBManager extends DatabaseManager {
         }));
     }
 
-    async getPlaylistsByQuery(query) {
-        await this.ensureInitialized();
-        return await Playlist.find(query).populate('owner', 'userName avatar');
-    }
-
     async getAllPublicPlaylists() {
         await this.ensureInitialized();
-        return await User.find({
-            $or: [
-                {
-                    userName: { $regex: userName, $options: 'i'}
-                },
-                {
-                    email: { $regex: userName, $options: 'i' }
-                }
-            ]
-        });
-    }
-
-    async getPlaylistsByQuery(query) {
-        await this.ensureInitialized();
-        return await Playlist.find(query);
+        return await Playlist.find({});
     }
 }
 

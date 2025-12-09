@@ -1,5 +1,4 @@
 import { useContext } from 'react'
-import GlobalStoreContext from '../store';
 import Modal from '@mui/material/Modal';
 import Alert from '@mui/material/Alert';
 import Button from '@mui/material/Button';
@@ -17,21 +16,34 @@ const style = {
     p: 4
 };
 
-
 export default function MUIErrorModal() {
-    const { store } = useContext(GlobalStoreContext);
-    const { auth } = useContext(AuthContext)
+    const { auth } = useContext(AuthContext);
 
     function handleCloseButton() {
-        store.hideModals();
-        console.log("CLOSE BUTTON CLICKED");
+        auth.clearError();
     }
 
+    if (!auth.errorMessage) return null;
+
     return (
-        <Modal open = {auth.errorMessage !== null}>
-         <Alert sx={style} severity="warning">{auth.errorMessage}
-         <Button sx={{color:"black", mt:"20px", ml:"85px", fontSize: 13, fontWeight: 'bold', border: 2}}variant="outlined" onClick={handleCloseButton}>Close</Button>
-         </Alert>
+        <Modal open={!!auth.errorMessage} onClose={handleCloseButton}>
+            <Alert sx={style} severity="warning">
+                {auth.errorMessage}
+                <Button 
+                    sx={{
+                        color: "black", 
+                        mt: "20px", 
+                        ml: "85px", 
+                        fontSize: 13, 
+                        fontWeight: 'bold', 
+                        border: 2
+                    }}
+                    variant="outlined" 
+                    onClick={handleCloseButton}
+                >
+                    Close
+                </Button>
+            </Alert>
         </Modal>
     );
 }

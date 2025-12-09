@@ -1,3 +1,7 @@
+// REMOVE THIS LINE:
+// const { incrementSongListens } = require('../../client/src/store/requests');
+
+// KEEP this:
 const auth = require('../auth')
 const { createDatabaseManager } = require('../db/create-Database-Manager')
 const dbManager = createDatabaseManager();
@@ -321,29 +325,32 @@ searchPlaylists = async (req, res) => {
 }
 
 searchSongs = async (req, res) => {
-    if (auth.verifyUser(req) === null) {
-        return res.status(401).json({
-            success: false,
-            errorMessage: 'Unauthorized User!'
-        });
-    }
+    // Allow both authenticated users and guests to search songs
+    // Remove the auth check or make it optional for this endpoint
     
     const { title, artist, year } = req.body;
     
     try {
-        let query = {};
+        // Build search criteria
+        const searchCriteria = {};
         
-        if (title) {
-            query.title = { $regex: title, $options: 'i' };
-        }
-        if (artist) {
-            query.artist = { $regex: artist, $options: 'i' };
-        }
-        if (year) {
-            query.year = year;
+        if (title && title.trim() !== '') {
+            searchCriteria.title = { $regex: title.trim(), $options: 'i' };
         }
         
-        const songs = await dbManager.getSongsByQuery(query);
+        if (artist && artist.trim() !== '') {
+            searchCriteria.artist = { $regex: artist.trim(), $options: 'i' };
+        }
+        
+        if (year && year !== '') {
+            const yearNum = parseInt(year);
+            if (!isNaN(yearNum)) {
+                searchCriteria.year = yearNum;
+            }
+        }
+        
+        // Use the searchSongs method instead of getSongsByQuery
+        const songs = await dbManager.searchSongs(searchCriteria);
         
         return res.status(200).json({
             success: true,
@@ -353,7 +360,7 @@ searchSongs = async (req, res) => {
         console.error("Error searching songs:", error);
         return res.status(400).json({
             success: false,
-            errorMessage: error.message
+            errorMessage: error.message || 'Failed to search songs'
         });
     }
 }
@@ -500,21 +507,36 @@ addSongToCatalog = async (req, res) => {
     const { title, artist, year, youTubeId } = req.body;
     
     try {
-        const user = await dbManager.getUserById(req.userId);
-        
-        const existingSong = await dbManager.getSongByDetails(title, artist, year);
-        if (existingSong) {
+        // Validate required fields
+        if (!title || !artist || !year || !youTubeId) {
             return res.status(400).json({
+                success: false,
+                errorMessage: 'All fields are required: title, artist, year, youTubeId'
+            });
+        }
+        
+        const user = await dbManager.getUserById(req.userId);
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                errorMessage: 'User not found'
+            });
+        }
+        
+        // Check for duplicate song (same title, artist, year)
+        const existingSong = await dbManager.getSongByDetails(title, artist, parseInt(year));
+        if (existingSong) {
+            return res.status(409).json({
                 success: false,
                 errorMessage: 'A song with this title, artist, and year already exists'
             });
         }
         
         const songData = {
-            title,
-            artist,
-            year,
-            youTubeId,
+            title: title.trim(),
+            artist: artist.trim(),
+            year: parseInt(year),
+            youTubeId: youTubeId.trim(),
             ownerEmail: user.email,
             listens: 0,
             playlistCount: 0
@@ -528,9 +550,18 @@ addSongToCatalog = async (req, res) => {
         });
     } catch (error) {
         console.error("Error adding song to catalog:", error);
+        
+        // Handle duplicate key error
+        if (error.code === 11000 || error.message.includes('duplicate key')) {
+            return res.status(409).json({
+                success: false,
+                errorMessage: 'A song with this title, artist, and year already exists'
+            });
+        }
+        
         return res.status(400).json({
             success: false,
-            errorMessage: error.message
+            errorMessage: error.message || 'Failed to add song to catalog'
         });
     }
 }
@@ -597,7 +628,7 @@ searchAllPlaylists = async (req, res) => {
         let playlists = await dbManager.getPlaylistsByQuery(query);
 
         if (songTitle || songArtist || songYear) {
-            playlists = playlists.filter(playlister => {
+            playlists = playlists.filter(playlist => {
                 if (!playlist.songs || playlist.songs.length === 0) {
                     return false;
                 }
@@ -652,6 +683,59 @@ getAllPlaylists = async (req, res) => {
     }
 }
 
+incrementPlaylistCount = async (req, res) => {
+    try {
+        const song = await dbManager.getSongById(req.params.id);
+        if (!song) {
+            return res.status(404).json({
+                success: false,
+                errorMessage: 'Song not found'
+            });
+        }
+        
+        song.playlistCount = (song.playlistCount || 0) + 1;
+        await song.save();
+        
+        return res.status(200).json({
+            success: true,
+            playlistCount: song.playlistCount
+        });
+    } catch (error) {
+        console.error("Error incrementing playlist count:", error);
+        return res.status(500).json({
+            success: false,
+            errorMessage: 'Internal server error'
+        });
+    }
+}
+
+// Add this function (missing from your exports)
+incrementSongListens = async (req, res) => {
+    try {
+        const song = await dbManager.getSongById(req.params.id);
+        if (!song) {
+            return res.status(404).json({
+                success: false,
+                errorMessage: 'Song not found'
+            });
+        }
+        
+        song.listens = (song.listens || 0) + 1;
+        await song.save();
+        
+        return res.status(200).json({
+            success: true,
+            listens: song.listens
+        });
+    } catch (error) {
+        console.error("Error incrementing song listens:", error);
+        return res.status(500).json({
+            success: false,
+            errorMessage: 'Internal server error'
+        });
+    }
+}
+
 module.exports = {
     createPlaylist,
     deletePlaylist,
@@ -667,5 +751,7 @@ module.exports = {
     addSongToCatalog,
     removeSongFromCatalog,
     searchAllPlaylists,
-    getAllPlaylists
+    getAllPlaylists,
+    incrementSongListens,  // Add this to exports
+    incrementPlaylistCount
 };
