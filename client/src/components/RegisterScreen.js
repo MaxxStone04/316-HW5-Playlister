@@ -194,10 +194,6 @@ export default function RegisterScreen() {
                                                         borderRadius: 1,
                                                         px: 2,
                                                         py: 0.5,
-                                                        '&:hover': {
-                                                            borderColor: '#333',
-                                                            bgcolor: 'rgba(0,0,0,0.04)'
-                                                        }
                                                     }}
                                                     onClick={handleClearAvatar}
                                                 >
@@ -249,30 +245,6 @@ export default function RegisterScreen() {
                                                 value={formData.userName}
                                                 onChange={handleInputChange('userName')}
                                                 error={!!formErrors.userName}
-                                                sx={{
-                                                    '& .MuiOutlinedInput-root': {
-                                                        backgroundColor: '#E6E0E9',
-                                                        borderRadius: 2,
-                                                        '& fieldset': {
-                                                            borderColor: formErrors.userName ? '#d32f2f' : '#E6E0E9',
-                                                        },
-                                                        '&:hover fieldset': {
-                                                            borderColor: '#999',
-                                                        },
-                                                        '&.Mui-focused fieldset': {
-                                                            borderColor: '#1976d2',
-                                                        },
-                                                    },
-                                                    '& .MuiInputBase-input': {
-                                                        paddingRight: '40px',
-                                                        py: 1.5,
-                                                        fontSize: '1rem'
-                                                    },
-                                                    '& .MuiInputBase-input::placeholder': {
-                                                        color: '#666',
-                                                        opacity: 1
-                                                    }
-                                                }}
                                             />
                                             {formData.userName && (
                                                 <IconButton
@@ -314,30 +286,6 @@ export default function RegisterScreen() {
                                                 value={formData.email}
                                                 onChange={handleInputChange('email')}
                                                 error={!!formErrors.email}
-                                                sx={{
-                                                    '& .MuiOutlinedInput-root': {
-                                                        backgroundColor: '#E6E0E9',
-                                                        borderRadius: 2,
-                                                        '& fieldset': {
-                                                            borderColor: formErrors.email ? '#d32f2f' : '#E6E0E9',
-                                                        },
-                                                        '&:hover fieldset': {
-                                                            borderColor: '#999',
-                                                        },
-                                                        '&.Mui-focused fieldset': {
-                                                            borderColor: '#1976d2',
-                                                        },
-                                                    },
-                                                    '& .MuiInputBase-input': {
-                                                        paddingRight: '40px',
-                                                        py: 1.5,
-                                                        fontSize: '1rem'
-                                                    },
-                                                    '& .MuiInputBase-input::placeholder': {
-                                                        color: '#666',
-                                                        opacity: 1
-                                                    }
-                                                }}
                                             />
                                             {formData.email && (
                                                 <IconButton
@@ -380,30 +328,6 @@ export default function RegisterScreen() {
                                                 value={formData.password}
                                                 onChange={handleInputChange('password')}
                                                 error={!!formErrors.password}
-                                                sx={{
-                                                    '& .MuiOutlinedInput-root': {
-                                                        backgroundColor: '#E6E0E9',
-                                                        borderRadius: 2,
-                                                        '& fieldset': {
-                                                            borderColor: formErrors.password ? '#d32f2f' : '#E6E0E9',
-                                                        },
-                                                        '&:hover fieldset': {
-                                                            borderColor: '#999',
-                                                        },
-                                                        '&.Mui-focused fieldset': {
-                                                            borderColor: '#1976d2',
-                                                        },
-                                                    },
-                                                    '& .MuiInputBase-input': {
-                                                        paddingRight: '40px',
-                                                        py: 1.5,
-                                                        fontSize: '1rem'
-                                                    },
-                                                    '& .MuiInputBase-input::placeholder': {
-                                                        color: '#666',
-                                                        opacity: 1
-                                                    }
-                                                }}
                                             />
                                             {formData.password && (
                                                 <IconButton
@@ -446,30 +370,6 @@ export default function RegisterScreen() {
                                                 value={formData.passwordConfirm}
                                                 onChange={handleInputChange('passwordConfirm')}
                                                 error={!!formErrors.passwordConfirm}
-                                                sx={{
-                                                    '& .MuiOutlinedInput-root': {
-                                                        backgroundColor: '#E6E0E9',
-                                                        borderRadius: 2,
-                                                        '& fieldset': {
-                                                            borderColor: formErrors.passwordConfirm ? '#d32f2f' : '#E6E0E9',
-                                                        },
-                                                        '&:hover fieldset': {
-                                                            borderColor: '#999',
-                                                        },
-                                                        '&.Mui-focused fieldset': {
-                                                            borderColor: '#1976d2',
-                                                        },
-                                                    },
-                                                    '& .MuiInputBase-input': {
-                                                        paddingRight: '40px',
-                                                        py: 1.5,
-                                                        fontSize: '1rem'
-                                                    },
-                                                    '& .MuiInputBase-input::placeholder': {
-                                                        color: '#666',
-                                                        opacity: 1
-                                                    }
-                                                }}
                                             />
                                             {formData.passwordConfirm && (
                                                 <IconButton
@@ -531,9 +431,6 @@ export default function RegisterScreen() {
                                         fontWeight: 'bold',
                                         fontSize: '1rem',
                                         textTransform: 'none',
-                                        '&:hover': {
-                                            bgcolor: '#333',
-                                        },
                                         '&:disabled': {
                                             bgcolor: '#666',
                                             color: '#999'
