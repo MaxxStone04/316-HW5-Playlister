@@ -27,13 +27,11 @@ export default function LoginScreen() {
     const handleSubmit = (event) => {
         event.preventDefault();
         
-        // Clear previous errors
         if (auth.errorMessage) {
             auth.clearError && auth.clearError();
         }
         setFormErrors({});
         
-        // Basic frontend validation
         const errors = {};
         
         if (!formData.email.trim()) {
@@ -59,7 +57,6 @@ export default function LoginScreen() {
             ...formData,
             [field]: event.target.value
         });
-        // Clear error for this field when user starts typing
         if (formErrors[field]) {
             setFormErrors({
                 ...formErrors,
@@ -90,7 +87,7 @@ export default function LoginScreen() {
                 flexDirection: 'column',
                 alignItems: 'center',
                 justifyContent: 'center',
-                backgroundColor: '#FFFFE4', // Background color from diagram
+                backgroundColor: '#FFFFE4',
             }}
         >
             <Container 
@@ -108,7 +105,6 @@ export default function LoginScreen() {
             >
                 <CssBaseline />
                 
-                {/* Lock Icon */}
                 <Box sx={{ m: 2 }}>
                     <LockOutlinedIcon 
                         sx={{ 
@@ -118,7 +114,6 @@ export default function LoginScreen() {
                     />
                 </Box>
                 
-                {/* Sign In Title */}
                 <Typography 
                     component="h1" 
                     variant="h3" 
@@ -141,7 +136,6 @@ export default function LoginScreen() {
                         px: { xs: 2, sm: 0 }
                     }}
                 >
-                    {/* Email Field */}
                     <TextField
                         fullWidth
                         required
@@ -190,7 +184,6 @@ export default function LoginScreen() {
                         }}
                     />
                     
-                    {/* Password Field */}
                     <TextField
                         fullWidth
                         required
@@ -239,7 +232,6 @@ export default function LoginScreen() {
                         }}
                     />
                     
-                    {/* Sign In Button */}
                     <Button
                         type="submit"
                         fullWidth
@@ -264,12 +256,11 @@ export default function LoginScreen() {
                         Sign In
                     </Button>
                     
-                    {/* Sign Up Link - RED TEXT */}
                     <Box sx={{ textAlign: 'left', mb: 6 }}>
                         <Typography 
                             variant="body1" 
                             sx={{ 
-                                color: '#FF0000', // Red color
+                                color: '#FF0000', 
                                 fontWeight: 'medium',
                                 fontSize: '1.1rem'
                             }}
@@ -281,7 +272,7 @@ export default function LoginScreen() {
                                 sx={{ 
                                     fontWeight: 'bold',
                                     textDecoration: 'none',
-                                    color: '#FF0000', // Red color
+                                    color: '#FF0000', 
                                     '&:hover': {
                                         textDecoration: 'underline',
                                         color: '#CC0000'
@@ -293,7 +284,6 @@ export default function LoginScreen() {
                         </Typography>
                     </Box>
                     
-                    {/* Copyright */}
                     <Copyright sx={{ 
                         mt: 4, 
                         fontSize: '1rem',
@@ -301,7 +291,6 @@ export default function LoginScreen() {
                     }} />
                 </Box>
                 
-                {/* Error Modal */}
                 {auth.errorMessage && <MUIErrorModal />}
             </Container>
         </Box>
