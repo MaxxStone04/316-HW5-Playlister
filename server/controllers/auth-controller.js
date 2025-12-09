@@ -108,42 +108,50 @@ registerUser = async (req, res) => {
     try {
         const { userName, email, password, passwordVerify, avatar } = req.body;
         console.log("create user: " + userName + " " + email + " " + password + " " + passwordVerify);
-        if (!userNameName || !email || !password || !passwordVerify || !avatar) {
+        
+        if (!userName || !email || !password || !passwordVerify) {
             return res.status(400).json({ 
                 errorMessage: "Please enter all required fields." 
             });
         }
+        
         if (password.length < 8) {
             return res.status(400).json({
                 errorMessage: "Please enter a password of at least 8 characters."
             });
         }
+        
         if (password !== passwordVerify) {
             return res.status(400).json({
                 errorMessage: "Please enter the same password twice."
-            })
-        }
-        const existingUser = await dbManager.getUserByEmail(email);
-        if (existingUser) {
-            return res
-                .status(400)
-                .json({
-                    success: false,
-                    errorMessage: "An account with this email address already exists."
-                })
-        }
-
-        if (!avatar.startsWith('data:image/')) {
-            return res.status(400).json({
-                errorMessage: "Invalid avatar format. Please upload an image."
             });
         }
+        
+        const existingUser = await dbManager.getUserByEmail(email);
+        console.log("existingUser: " + existingUser);
+        
+        if (existingUser) {
+            return res.status(400).json({
+                success: false,
+                errorMessage: "An account with this email address already exists."
+            });
+        }
+
+        // ACCEPT ANY STRING AS AVATAR (for now - we'll validate later)
+        // This could be a URL, base64 string, or even just store initials
+        const avatarToStore = avatar || ''; // Default to empty if not provided
 
         const saltRounds = 10;
         const salt = await bcrypt.genSalt(saltRounds);
         const passwordHash = await bcrypt.hash(password, salt);
 
-        const newUser = await dbManager.createUser({userName, email, passwordHash, avatar});
+        const newUser = await dbManager.createUser({
+            userName, 
+            email, 
+            passwordHash, 
+            avatar: avatarToStore
+        });
+        
         console.log("new user saved:", newUser);
 
         // LOGIN THE USER
@@ -157,6 +165,7 @@ registerUser = async (req, res) => {
         }
 
         const token = auth.signToken(userId);
+        console.log("token:" + token);
 
         await res.cookie("token", token, {
             httpOnly: true,
@@ -165,12 +174,11 @@ registerUser = async (req, res) => {
         }).status(200).json({
             success: true,
             user: {
-                firstName: newUser.userName,   
+                userName: newUser.userName,
                 email: newUser.email,
-                avatar: newUser.avatar          
+                avatar: newUser.avatar
             }
         });
-
 
     } catch (err) {
         console.error(err);

@@ -9,7 +9,6 @@ const Schema = mongoose.Schema
 const playlistSchema = new Schema(
     {
         name: { type: String, required: true },
-        owner: { type: Schema.Types.ObjectId, ref: 'User', required: true},
         ownerEmail: { type: String, required: true },
         songs: { type: [{
             title: String,
