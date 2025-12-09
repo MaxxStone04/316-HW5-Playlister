@@ -76,7 +76,6 @@ export default function AppBanner() {
             <MenuItem key="logout" onClick={handleLogout}>Logout</MenuItem>
         ];
     } else {
-        // Both guest and not logged in see the same menu
         menuItems = [
             <MenuItem key="login" onClick={handleLogin}>Login</MenuItem>,
             <MenuItem key="register" onClick={handleCreateAccount}>Create Account</MenuItem>
@@ -107,8 +106,6 @@ export default function AppBanner() {
     const isSongsActive = location.pathname === '/songs';
     const isWelcomeScreen = location.pathname === '/';
 
-    // According to diagrams, on Welcome/Create/Login screens, only Home button and Account button show
-    // On Playlists/Songs screens, Home, Playlists, Songs Catalog buttons show, plus title in middle
     const showNavigationButtons = !isWelcomeScreen && 
                                   location.pathname !== '/login' && 
                                   location.pathname !== '/register' && 
@@ -124,7 +121,6 @@ export default function AppBanner() {
                 }}
             >
                 <Toolbar sx={{ minHeight: 64 }}>
-                    {/* Always show Home button on left */}
                     <IconButton
                         size="large"
                         edge="start"
@@ -136,7 +132,6 @@ export default function AppBanner() {
                         <HomeIcon />
                     </IconButton>
 
-                    {/* Navigation Buttons and Title (only on main screens) */}
                     {showNavigationButtons ? (
                         <>
                             <Button
@@ -169,7 +164,6 @@ export default function AppBanner() {
                                 Song Catalog
                             </Button>
 
-                            {/* Title centered - using flexbox to center */}
                             <Box sx={{ 
                                 flexGrow: 1,
                                 display: 'flex',
@@ -177,7 +171,7 @@ export default function AppBanner() {
                                 position: 'absolute',
                                 left: 0,
                                 right: 0,
-                                pointerEvents: 'none' // Allows clicks to pass through to buttons
+                                pointerEvents: 'none' 
                             }}>
                                 <Typography
                                     variant="h6"
@@ -192,7 +186,6 @@ export default function AppBanner() {
                             </Box>
                         </>
                     ) : (
-                        // On Welcome/Login/Register screens, center the title
                         <Box sx={{ 
                             flexGrow: 1,
                             display: 'flex',
@@ -214,18 +207,12 @@ export default function AppBanner() {
                             </Typography>
                         </Box>
                     )}
-
-                    {/* Edit Toolbar (only when editing a playlist in workspace) */}
                     {store.currentList && location.pathname.includes('/playlist/') && (
                         <Box sx={{ mr: 2 }}>
                             <EditToolbar />
                         </Box>
                     )}
-
-                    {/* Spacer to push everything to the right except avatar */}
                     <Box sx={{ flexGrow: 1 }} />
-
-                    {/* User Menu Icon - ALL THE WAY ON THE RIGHT */}
                     <IconButton
                         size="large"
                         edge="end"
@@ -235,8 +222,8 @@ export default function AppBanner() {
                         onClick={handleProfileMenuOpen}
                         color="inherit"
                         sx={{ 
-                            marginLeft: 'auto', // This pushes it to the right
-                            ml: 0 // Remove any left margin
+                            marginLeft: 'auto',
+                            ml: 0 
                         }}
                     >
                         {auth.loggedIn ? (
@@ -246,13 +233,11 @@ export default function AppBanner() {
                                     sx={{ width: 32, height: 32 }}
                                 />
                             ) : (
-                                // If logged in but no avatar, show initials or generic
                                 <Avatar sx={{ width: 32, height: 32, bgcolor: 'secondary.main' }}>
                                     {auth.user?.userName?.charAt(0) || 'U'}
                                 </Avatar>
                             )
                         ) : (
-                            // Not logged in (guest or on welcome screen) - show lock icon per diagrams
                             <AccountCircle />
                         )}
                     </IconButton>

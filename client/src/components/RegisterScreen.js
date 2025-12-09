@@ -1,9 +1,9 @@
 import { useContext, useState } from 'react';
-import AuthContext from '../auth'
-import MUIErrorModal from './MUIErrorModal'
-import Copyright from './Copyright'
+import AuthContext from '../auth';
+import MUIErrorModal from './MUIErrorModal';
+import Copyright from './Copyright';
+import SelectAvatarModal from './SelectAvatarModal';
 
-import Avatar from '@mui/material/Avatar';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Container from '@mui/material/Container';
@@ -13,22 +13,27 @@ import Link from '@mui/material/Link';
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
+import IconButton from '@mui/material/IconButton';
+import ClearIcon from '@mui/icons-material/Clear';
+import Avatar from '@mui/material/Avatar';
 
 export default function RegisterScreen() {
     const { auth } = useContext(AuthContext);
     const [formErrors, setFormErrors] = useState({});
     const [avatar, setAvatar] = useState(null);
+    const [showAvatarModal, setShowAvatarModal] = useState(false);
+    const [formData, setFormData] = useState({
+        userName: '',
+        email: '',
+        password: '',
+        passwordConfirm: ''
+    });
 
     const handleSubmit = (event) => {
         event.preventDefault();
-        const formData = new FormData(event.currentTarget);
-        
-        // Frontend validation
+    
         const errors = {};
-        const userName = formData.get('userName');
-        const email = formData.get('email');
-        const password = formData.get('password');
-        const passwordVerify = formData.get('passwordVerify');
+        const { userName, email, password, passwordConfirm } = formData;
         
         if (!userName.trim()) {
             errors.userName = 'A username is required';
@@ -36,6 +41,8 @@ export default function RegisterScreen() {
         
         if (!email.trim()) {
             errors.email = 'An email is required';
+        } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+            errors.email = 'Invalid email format';
         }
         
         if (!password) {
@@ -44,10 +51,10 @@ export default function RegisterScreen() {
             errors.password = 'The password must be at least 8 characters';
         }
         
-        if (!passwordVerify) {
-            errors.passwordVerify = 'Please confirm your password';
-        } else if (password !== passwordVerify) {
-            errors.passwordVerify = 'These two passwords do not match';
+        if (!passwordConfirm) {
+            errors.passwordConfirm = 'Please confirm your password';
+        } else if (password !== passwordConfirm) {
+            errors.passwordConfirm = 'These two Passwords do not match';
         }
         
         if (!avatar) {
@@ -63,16 +70,54 @@ export default function RegisterScreen() {
             userName,
             email,
             password,
-            passwordVerify,
+            passwordConfirm,
             avatar
         );
     };
 
+    const handleInputChange = (field) => (event) => {
+        setFormData({
+            ...formData,
+            [field]: event.target.value
+        });
+        
+        if (formErrors[field]) {
+            setFormErrors({
+                ...formErrors,
+                [field]: ''
+            });
+        }
+    };
+
+    const handleClearField = (field) => () => {
+        setFormData({
+            ...formData,
+            [field]: ''
+        });
+        
+        if (formErrors[field]) {
+            setFormErrors({
+                ...formErrors,
+                [field]: ''
+            });
+        }
+    };
+
     const handleAvatarSelect = (avatarData) => {
         setAvatar(avatarData);
+        setShowAvatarModal(false);
         if (formErrors.avatar) {
             setFormErrors({...formErrors, avatar: ''});
         }
+    };
+
+    const handleAvatarButtonClick = () => {
+        setShowAvatarModal(true);
+    };
+
+    const handleClearAvatar = () => {
+        setAvatar(null);
+        setFormErrors({...formErrors, avatar: 'Please select an avatar'});
     };
 
     let modalJSX = "";
@@ -81,133 +126,464 @@ export default function RegisterScreen() {
     }
 
     return (
-        <Container component="main" maxWidth="xs">
+        <Box sx={{ 
+            bgcolor: '#FFFFE4', 
+            minHeight: '100vh',
+            pt: 8
+        }}>
             <CssBaseline />
-            <Box
-                sx={{
-                    marginTop: 8,
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                }}
-            >
-                <Avatar sx={{ m: 1, bgcolor: 'secondary.main' }}>
-                    <LockOutlinedIcon />
-                </Avatar>
-                <Typography component="h1" variant="h5">
-                    Sign up
-                </Typography>
-                <Box component="form" noValidate onSubmit={handleSubmit} sx={{ mt: 3 }}>
-                    <Grid container spacing={2}>
-                        <Grid item xs={12}>
-                            <TextField
-                                autoComplete="username"
-                                name="userName"
-                                required
-                                fullWidth
-                                id="userName"
-                                label="User Name"
-                                error={!!formErrors.userName}
-                                helperText={formErrors.userName}
-                                autoFocus
-                            />
-                        </Grid>
-                        <Grid item xs={12}>
-                            <TextField
-                                required
-                                fullWidth
-                                id="email"
-                                label="Email Address"
-                                name="email"
-                                autoComplete="email"
-                                error={!!formErrors.email}
-                                helperText={formErrors.email}
-                            />
-                        </Grid>
-                        <Grid item xs={12}>
-                            <TextField
-                                required
-                                fullWidth
-                                name="password"
-                                label="Password"
-                                type="password"
-                                id="password"
-                                autoComplete="new-password"
-                                error={!!formErrors.password}
-                                helperText={formErrors.password || "Minimum 8 characters"}
-                            />
-                        </Grid>
-                        <Grid item xs={12}>
-                            <TextField
-                                required
-                                fullWidth
-                                name="passwordVerify"
-                                label="Confirm Password"
-                                type="password"
-                                id="passwordVerify"
-                                autoComplete="new-password"
-                                error={!!formErrors.passwordVerify}
-                                helperText={formErrors.passwordVerify}
-                            />
-                        </Grid>
-                        <Grid item xs={12}>
-                            <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                                <Typography variant="body2" color="text.secondary">
-                                    Avatar: 
-                                </Typography>
-                                {avatar ? (
-                                    <Avatar 
-                                        src={avatar} 
-                                        sx={{ width: 40, height: 40, ml: 2 }}
-                                    />
-                                ) : (
-                                    <Avatar 
-                                        sx={{ width: 40, height: 40, ml: 2, bgcolor: 'grey.400' }}
-                                    >
-                                        ?
-                                    </Avatar>
-                                )}
-                                <Button 
-                                    size="small" 
-                                    sx={{ ml: 2 }}
-                                    onClick={() => {
-                                        // We'll handle this with the modal
-                                        // For now, just show a message
-                                        alert("Avatar selection will be implemented with the modal");
-                                    }}
-                                >
-                                    Select Avatar
-                                </Button>
-                            </Box>
-                            {formErrors.avatar && (
-                                <Typography color="error" variant="caption">
-                                    {formErrors.avatar}
-                                </Typography>
-                            )}
-                            <Typography variant="caption" color="text.secondary">
-                                Image must be 100x100 pixels
-                            </Typography>
-                        </Grid>
-                    </Grid>
-                    <Button
-                        type="submit"
-                        fullWidth
-                        variant="contained"
-                        sx={{ mt: 3, mb: 2 }}
+            <Container maxWidth="sm">
+                <Box
+                    sx={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                    }}
+                >
+                    <Box sx={{ m: 2 }}>
+                        <LockOutlinedIcon 
+                            sx={{ 
+                                fontSize: 48,
+                                color: 'text.primary'
+                            }} 
+                        />
+                    </Box>
+                    
+                    <Typography 
+                        component="h1" 
+                        variant="h4" 
+                        sx={{ 
+                            mb: 5,
+                            fontWeight: 'bold',
+                            color: 'text.primary'
+                        }}
                     >
-                        Sign Up
-                    </Button>
-                    <Grid container justifyContent="flex-end">
-                        <Grid item>
-                            <Link href="/login/" variant="body2">
-                                Already have an account? Sign in
-                            </Link>
+                        Create Account
+                    </Typography>
+                    
+                    <Box component="form" noValidate onSubmit={handleSubmit} sx={{ width: '100%' }}>
+                        <Grid container spacing={3}>
+                            <Grid item xs={12}>
+                                <Box sx={{ display: 'flex', gap: 3 }}>
+                                    <Box sx={{ 
+                                        display: 'flex', 
+                                        flexDirection: 'column', 
+                                        alignItems: 'center',
+                                        width: 120,
+                                        pt: 1 
+                                    }}>
+                                        {avatar ? (
+                                            <>
+                                                <Avatar
+                                                    src={avatar}
+                                                    sx={{ 
+                                                        width: 80, 
+                                                        height: 80,
+                                                        mb: 1.5,
+                                                        border: '2px solid #E6E0E9',
+                                                        bgcolor: 'white'
+                                                    }}
+                                                />
+                                                <Button 
+                                                    size="small" 
+                                                    variant="outlined"
+                                                    sx={{ 
+                                                        fontSize: '0.75rem',
+                                                        color: '#666',
+                                                        borderColor: '#666',
+                                                        borderRadius: 1,
+                                                        px: 2,
+                                                        py: 0.5,
+                                                        '&:hover': {
+                                                            borderColor: '#333',
+                                                            bgcolor: 'rgba(0,0,0,0.04)'
+                                                        }
+                                                    }}
+                                                    onClick={handleClearAvatar}
+                                                >
+                                                    Clear
+                                                </Button>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <Avatar
+                                                    sx={{ 
+                                                        width: 80, 
+                                                        height: 80,
+                                                        mb: 1.5,
+                                                        bgcolor: 'grey.300',
+                                                        border: '2px dashed #E6E0E9'
+                                                    }}
+                                                >
+                                                    ?
+                                                </Avatar>
+                                                <Button 
+                                                    size="small" 
+                                                    variant="contained"
+                                                    sx={{ 
+                                                        fontSize: '0.75rem',
+                                                        bgcolor: '#666',
+                                                        borderRadius: 1,
+                                                        px: 2,
+                                                        py: 0.5,
+                                                        '&:hover': {
+                                                            bgcolor: '#333'
+                                                        }
+                                                    }}
+                                                    onClick={handleAvatarButtonClick}
+                                                >
+                                                    Select
+                                                </Button>
+                                            </>
+                                        )}
+                                    </Box>
+                                    
+                                    <Box sx={{ flex: 1 }}>
+                                        <Box sx={{ position: 'relative', mb: 3 }}>
+                                            <TextField
+                                                fullWidth
+                                                required
+                                                id="userName"
+                                                name="userName"
+                                                placeholder="User Name"
+                                                value={formData.userName}
+                                                onChange={handleInputChange('userName')}
+                                                error={!!formErrors.userName}
+                                                sx={{
+                                                    '& .MuiOutlinedInput-root': {
+                                                        backgroundColor: '#E6E0E9',
+                                                        borderRadius: 2,
+                                                        '& fieldset': {
+                                                            borderColor: formErrors.userName ? '#d32f2f' : '#E6E0E9',
+                                                        },
+                                                        '&:hover fieldset': {
+                                                            borderColor: '#999',
+                                                        },
+                                                        '&.Mui-focused fieldset': {
+                                                            borderColor: '#1976d2',
+                                                        },
+                                                    },
+                                                    '& .MuiInputBase-input': {
+                                                        paddingRight: '40px',
+                                                        py: 1.5,
+                                                        fontSize: '1rem'
+                                                    },
+                                                    '& .MuiInputBase-input::placeholder': {
+                                                        color: '#666',
+                                                        opacity: 1
+                                                    }
+                                                }}
+                                            />
+                                            {formData.userName && (
+                                                <IconButton
+                                                    size="small"
+                                                    onClick={handleClearField('userName')}
+                                                    sx={{
+                                                        position: 'absolute',
+                                                        right: 8,
+                                                        top: '50%',
+                                                        transform: 'translateY(-50%)',
+                                                        color: '#666'
+                                                    }}
+                                                >
+                                                    <ClearIcon fontSize="small" />
+                                                </IconButton>
+                                            )}
+                                            {formErrors.userName && (
+                                                <Typography 
+                                                    variant="caption" 
+                                                    color="error" 
+                                                    sx={{ 
+                                                        display: 'block',
+                                                        mt: 0.5,
+                                                        ml: 1
+                                                    }}
+                                                >
+                                                    {formErrors.userName}
+                                                </Typography>
+                                            )}
+                                        </Box>
+                                        
+                                        <Box sx={{ position: 'relative', mb: 3 }}>
+                                            <TextField
+                                                fullWidth
+                                                required
+                                                id="email"
+                                                name="email"
+                                                placeholder="Email"
+                                                value={formData.email}
+                                                onChange={handleInputChange('email')}
+                                                error={!!formErrors.email}
+                                                sx={{
+                                                    '& .MuiOutlinedInput-root': {
+                                                        backgroundColor: '#E6E0E9',
+                                                        borderRadius: 2,
+                                                        '& fieldset': {
+                                                            borderColor: formErrors.email ? '#d32f2f' : '#E6E0E9',
+                                                        },
+                                                        '&:hover fieldset': {
+                                                            borderColor: '#999',
+                                                        },
+                                                        '&.Mui-focused fieldset': {
+                                                            borderColor: '#1976d2',
+                                                        },
+                                                    },
+                                                    '& .MuiInputBase-input': {
+                                                        paddingRight: '40px',
+                                                        py: 1.5,
+                                                        fontSize: '1rem'
+                                                    },
+                                                    '& .MuiInputBase-input::placeholder': {
+                                                        color: '#666',
+                                                        opacity: 1
+                                                    }
+                                                }}
+                                            />
+                                            {formData.email && (
+                                                <IconButton
+                                                    size="small"
+                                                    onClick={handleClearField('email')}
+                                                    sx={{
+                                                        position: 'absolute',
+                                                        right: 8,
+                                                        top: '50%',
+                                                        transform: 'translateY(-50%)',
+                                                        color: '#666'
+                                                    }}
+                                                >
+                                                    <ClearIcon fontSize="small" />
+                                                </IconButton>
+                                            )}
+                                            {formErrors.email && (
+                                                <Typography 
+                                                    variant="caption" 
+                                                    color="error" 
+                                                    sx={{ 
+                                                        display: 'block',
+                                                        mt: 0.5,
+                                                        ml: 1
+                                                    }}
+                                                >
+                                                    {formErrors.email}
+                                                </Typography>
+                                            )}
+                                        </Box>
+                                        
+                                        <Box sx={{ position: 'relative', mb: 3 }}>
+                                            <TextField
+                                                fullWidth
+                                                required
+                                                name="password"
+                                                type="password"
+                                                id="password"
+                                                placeholder="Password"
+                                                value={formData.password}
+                                                onChange={handleInputChange('password')}
+                                                error={!!formErrors.password}
+                                                sx={{
+                                                    '& .MuiOutlinedInput-root': {
+                                                        backgroundColor: '#E6E0E9',
+                                                        borderRadius: 2,
+                                                        '& fieldset': {
+                                                            borderColor: formErrors.password ? '#d32f2f' : '#E6E0E9',
+                                                        },
+                                                        '&:hover fieldset': {
+                                                            borderColor: '#999',
+                                                        },
+                                                        '&.Mui-focused fieldset': {
+                                                            borderColor: '#1976d2',
+                                                        },
+                                                    },
+                                                    '& .MuiInputBase-input': {
+                                                        paddingRight: '40px',
+                                                        py: 1.5,
+                                                        fontSize: '1rem'
+                                                    },
+                                                    '& .MuiInputBase-input::placeholder': {
+                                                        color: '#666',
+                                                        opacity: 1
+                                                    }
+                                                }}
+                                            />
+                                            {formData.password && (
+                                                <IconButton
+                                                    size="small"
+                                                    onClick={handleClearField('password')}
+                                                    sx={{
+                                                        position: 'absolute',
+                                                        right: 8,
+                                                        top: '50%',
+                                                        transform: 'translateY(-50%)',
+                                                        color: '#666'
+                                                    }}
+                                                >
+                                                    <ClearIcon fontSize="small" />
+                                                </IconButton>
+                                            )}
+                                            {formErrors.password && (
+                                                <Typography 
+                                                    variant="caption" 
+                                                    color="error" 
+                                                    sx={{ 
+                                                        display: 'block',
+                                                        mt: 0.5,
+                                                        ml: 1
+                                                    }}
+                                                >
+                                                    {formErrors.password}
+                                                </Typography>
+                                            )}
+                                        </Box>
+                                        
+                                        <Box sx={{ position: 'relative', mb: 4 }}>
+                                            <TextField
+                                                fullWidth
+                                                required
+                                                name="passwordConfirm"
+                                                type="password"
+                                                id="passwordConfirm"
+                                                placeholder="Password Confirm"
+                                                value={formData.passwordConfirm}
+                                                onChange={handleInputChange('passwordConfirm')}
+                                                error={!!formErrors.passwordConfirm}
+                                                sx={{
+                                                    '& .MuiOutlinedInput-root': {
+                                                        backgroundColor: '#E6E0E9',
+                                                        borderRadius: 2,
+                                                        '& fieldset': {
+                                                            borderColor: formErrors.passwordConfirm ? '#d32f2f' : '#E6E0E9',
+                                                        },
+                                                        '&:hover fieldset': {
+                                                            borderColor: '#999',
+                                                        },
+                                                        '&.Mui-focused fieldset': {
+                                                            borderColor: '#1976d2',
+                                                        },
+                                                    },
+                                                    '& .MuiInputBase-input': {
+                                                        paddingRight: '40px',
+                                                        py: 1.5,
+                                                        fontSize: '1rem'
+                                                    },
+                                                    '& .MuiInputBase-input::placeholder': {
+                                                        color: '#666',
+                                                        opacity: 1
+                                                    }
+                                                }}
+                                            />
+                                            {formData.passwordConfirm && (
+                                                <IconButton
+                                                    size="small"
+                                                    onClick={handleClearField('passwordConfirm')}
+                                                    sx={{
+                                                        position: 'absolute',
+                                                        right: 8,
+                                                        top: '50%',
+                                                        transform: 'translateY(-50%)',
+                                                        color: '#666'
+                                                    }}
+                                                >
+                                                    <ClearIcon fontSize="small" />
+                                                </IconButton>
+                                            )}
+                                            {formErrors.passwordConfirm && (
+                                                <Typography 
+                                                    variant="caption" 
+                                                    color="error" 
+                                                    sx={{ 
+                                                        display: 'block',
+                                                        mt: 0.5,
+                                                        ml: 1
+                                                    }}
+                                                >
+                                                    {formErrors.passwordConfirm}
+                                                </Typography>
+                                            )}
+                                        </Box>
+                                        
+                                        {formErrors.avatar && (
+                                            <Typography 
+                                                variant="caption" 
+                                                color="error" 
+                                                sx={{ 
+                                                    display: 'block',
+                                                    textAlign: 'center',
+                                                    mb: 2
+                                                }}
+                                            >
+                                                {formErrors.avatar}
+                                            </Typography>
+                                        )}
+                                    </Box>
+                                </Box>
+                            </Grid>
+                            
+                            <Grid item xs={12}>
+                                <Button
+                                    type="submit"
+                                    fullWidth
+                                    variant="contained"
+                                    sx={{
+                                        py: 1.5,
+                                        borderRadius: 2,
+                                        bgcolor: 'black',
+                                        color: 'white',
+                                        fontWeight: 'bold',
+                                        fontSize: '1rem',
+                                        textTransform: 'none',
+                                        '&:hover': {
+                                            bgcolor: '#333',
+                                        },
+                                        '&:disabled': {
+                                            bgcolor: '#666',
+                                            color: '#999'
+                                        }
+                                    }}
+                                    disabled={!avatar}
+                                >
+                                    Create Account
+                                </Button>
+                            </Grid>
+                            
+                            <Grid item xs={12}>
+                                <Box sx={{ 
+                                    display: 'flex', 
+                                    justifyContent: 'flex-end',
+                                    mt: 1
+                                }}>
+                                    <Link 
+                                        href="/login/" 
+                                        variant="body2"
+                                        sx={{ 
+                                            color: '#FC2020',
+                                            textDecoration: 'none',
+                                            '&:hover': {
+                                                textDecoration: 'underline'
+                                            }
+                                        }}
+                                    >
+                                        Already have an account? Sign in
+                                    </Link>
+                                </Box>
+                            </Grid>
                         </Grid>
-                    </Grid>
+                    </Box>
+                    
+                    <Box sx={{ mt: 6, mb: 4, width: '100%' }}>
+                        <Copyright />
+                    </Box>
                 </Box>
-            </Box>
-            <Copyright sx={{ mt: 5 }} />
-            { modalJSX }
-        </Container>
+            </Container>
+            
+            {modalJSX}
+            
+            {showAvatarModal && (
+                <SelectAvatarModal
+                    open={showAvatarModal}
+                    onClose={() => setShowAvatarModal(false)}
+                    onSelect={handleAvatarSelect}
+                />
+            )}
+        </Box>
     );
 }
