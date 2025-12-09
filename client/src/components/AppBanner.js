@@ -1,5 +1,5 @@
 import { useContext, useState } from 'react';
-import { Link, useHistory, useLocation } from 'react-router-dom'
+import { useHistory, useLocation } from 'react-router-dom'
 import AuthContext from '../auth';
 import { GlobalStoreContext } from '../store'
 import EditToolbar from './EditToolbar'
@@ -35,13 +35,16 @@ export default function AppBanner() {
     const handleLogout = () => {
         handleMenuClose();
         auth.logoutUser();
-    }
-
-    const handleHome = () => {
+        store.setGuestMode(false);
         history.push('/');
     }
 
+    const handleHome = () => {
+        history.push('/')
+    }
+
     const handlePlaylists = () => {
+        store.closeCurrentList();
         history.push('/playlists');
     };
 
@@ -54,6 +57,16 @@ export default function AppBanner() {
         history.push('/edit-account');
     };
 
+    const handleLogin = () => {
+        handleMenuClose();
+        history.push('/login');
+    };
+
+    const handleCreateAccount = () => {
+        handleMenuClose();
+        history.push('/register');
+    };
+
     const menuId = 'primary-search-account-menu';
     
     let menuItems;
@@ -62,31 +75,11 @@ export default function AppBanner() {
             <MenuItem key="edit" onClick={handleEditAccount}>Edit Account</MenuItem>,
             <MenuItem key="logout" onClick={handleLogout}>Logout</MenuItem>
         ];
-    } else if (store.isGuestMode) {
-        menuItems = [
-            <MenuItem key="login" onClick={handleMenuClose}>
-                <Link to='/login/' style={{ textDecoration: 'none', color: 'inherit', width: '100%' }}>
-                    Login
-                </Link>
-            </MenuItem>,
-            <MenuItem key="register" onClick={handleMenuClose}>
-                <Link to='/register/' style={{ textDecoration: 'none', color: 'inherit', width: '100%' }}>
-                    Create Account
-                </Link>
-            </MenuItem>
-        ];
     } else {
+        // Both guest and not logged in see the same menu
         menuItems = [
-            <MenuItem key="login" onClick={handleMenuClose}>
-                <Link to='/login/' style={{ textDecoration: 'none', color: 'inherit', width: '100%' }}>
-                    Login
-                </Link>
-            </MenuItem>,
-            <MenuItem key="register" onClick={handleMenuClose}>
-                <Link to='/register/' style={{ textDecoration: 'none', color: 'inherit', width: '100%' }}>
-                    Create Account
-                </Link>
-            </MenuItem>
+            <MenuItem key="login" onClick={handleLogin}>Login</MenuItem>,
+            <MenuItem key="register" onClick={handleCreateAccount}>Create Account</MenuItem>
         ];
     }
 
@@ -114,10 +107,24 @@ export default function AppBanner() {
     const isSongsActive = location.pathname === '/songs';
     const isWelcomeScreen = location.pathname === '/';
 
+    // According to diagrams, on Welcome/Create/Login screens, only Home button and Account button show
+    // On Playlists/Songs screens, Home, Playlists, Songs Catalog buttons show, plus title in middle
+    const showNavigationButtons = !isWelcomeScreen && 
+                                  location.pathname !== '/login' && 
+                                  location.pathname !== '/register' && 
+                                  location.pathname !== '/edit-account';
+
     return (
         <Box sx={{ flexGrow: 1 }}>
-            <AppBar position="static" sx={{ bgcolor: '#EE06FF' }}>
-                <Toolbar>
+            <AppBar 
+                position="static" 
+                sx={{ 
+                    bgcolor: '#EE06FF',
+                    height: 64
+                }}
+            >
+                <Toolbar sx={{ minHeight: 64 }}>
+                    {/* Always show Home button on left */}
                     <IconButton
                         size="large"
                         edge="start"
@@ -129,98 +136,126 @@ export default function AppBanner() {
                         <HomeIcon />
                     </IconButton>
 
-                    <Box sx={{ 
-                        flexGrow: 1,
-                        display: 'flex',
-                        justifyContent: isWelcomeScreen ? 'flex-end' : 'center'
-                    }}>
-                        {isWelcomeScreen ? (
-                            <Box />
-                        ) : (
+                    {/* Navigation Buttons and Title (only on main screens) */}
+                    {showNavigationButtons ? (
+                        <>
+                            <Button
+                                color="inherit"
+                                onClick={handlePlaylists}
+                                sx={{
+                                    mr: 2,
+                                    backgroundColor: isPlaylistsActive ? 'rgba(255, 255, 255, 0.2)' : 'transparent',
+                                    '&:hover': {
+                                        backgroundColor: 'rgba(255, 255, 255, 0.3)'
+                                    },
+                                    fontWeight: isPlaylistsActive ? 'bold' : 'normal'
+                                }}
+                            >
+                                Playlists
+                            </Button>
+
+                            <Button
+                                color="inherit"
+                                onClick={handleSongs}
+                                sx={{
+                                    mr: 2,
+                                    backgroundColor: isSongsActive ? 'rgba(255, 255, 255, 0.2)' : 'transparent',
+                                    '&:hover': {
+                                        backgroundColor: 'rgba(255, 255, 255, 0.3)'
+                                    },
+                                    fontWeight: isSongsActive ? 'bold' : 'normal'
+                                }}
+                            >
+                                Song Catalog
+                            </Button>
+
+                            {/* Title centered - using flexbox to center */}
                             <Box sx={{ 
-                                display: 'flex', 
-                                alignItems: 'center',
+                                flexGrow: 1,
+                                display: 'flex',
                                 justifyContent: 'center',
-                                flexGrow: 1
+                                position: 'absolute',
+                                left: 0,
+                                right: 0,
+                                pointerEvents: 'none' // Allows clicks to pass through to buttons
                             }}>
-                                <Button
-                                    color="inherit"
-                                    onClick={handlePlaylists}
-                                    sx={{
-                                        mr: 2,
-                                        backgroundColor: isPlaylistsActive ? 'rgba(255, 255, 255, 0.2)' : 'transparent',
-                                        '&:hover': {
-                                            backgroundColor: 'rgba(255, 255, 255, 0.3)'
-                                        }
-                                    }}
-                                >
-                                    Playlists
-                                </Button>
-
-                                <Button
-                                    color="inherit"
-                                    onClick={handleSongs}
-                                    sx={{
-                                        mr: 2,
-                                        backgroundColor: isSongsActive ? 'rgba(255, 255, 255, 0.2)' : 'transparent',
-                                        '&:hover': {
-                                            backgroundColor: 'rgba(255, 255, 255, 0.3)'
-                                        }
-                                    }}
-                                >
-                                    Song Catalog
-                                </Button>
-
                                 <Typography
                                     variant="h6"
                                     noWrap
                                     component="div"
                                     sx={{ 
-                                        display: { xs: 'none', md: 'block' },
-                                        fontWeight: 'bold',
-                                        ml: 4
+                                        fontWeight: 'bold'
                                     }}
                                 >
                                     The Playlister
                                 </Typography>
                             </Box>
-                        )}
-                    </Box>
+                        </>
+                    ) : (
+                        // On Welcome/Login/Register screens, center the title
+                        <Box sx={{ 
+                            flexGrow: 1,
+                            display: 'flex',
+                            justifyContent: 'center',
+                            position: 'absolute',
+                            left: 0,
+                            right: 0,
+                            pointerEvents: 'none'
+                        }}>
+                            <Typography
+                                variant="h6"
+                                noWrap
+                                component="div"
+                                sx={{ 
+                                    fontWeight: 'bold'
+                                }}
+                            >
+                                The Playlister
+                            </Typography>
+                        </Box>
+                    )}
 
-                    <Box sx={{ 
-                        display: 'flex', 
-                        alignItems: 'center',
-                        ml: 'auto' 
-                    }}>
-                        {store.currentList && (
-                            <Box sx={{ mr: 2 }}>
-                                <EditToolbar />
-                            </Box>
-                        )}
+                    {/* Edit Toolbar (only when editing a playlist in workspace) */}
+                    {store.currentList && location.pathname.includes('/playlist/') && (
+                        <Box sx={{ mr: 2 }}>
+                            <EditToolbar />
+                        </Box>
+                    )}
 
-                        <IconButton
-                            size="large"
-                            edge="end"
-                            aria-label="account of current user"
-                            aria-controls={menuId}
-                            aria-haspopup="true"
-                            onClick={handleProfileMenuOpen}
-                            color="inherit"
-                        >
-                            {auth.loggedIn ? (
-                                auth.user?.avatar ? (
-                                    <Avatar 
-                                        src={auth.user.avatar} 
-                                        sx={{ width: 32, height: 32 }}
-                                    />
-                                ) : (
-                                    <AccountCircle />
-                                )
+                    {/* Spacer to push everything to the right except avatar */}
+                    <Box sx={{ flexGrow: 1 }} />
+
+                    {/* User Menu Icon - ALL THE WAY ON THE RIGHT */}
+                    <IconButton
+                        size="large"
+                        edge="end"
+                        aria-label="account of current user"
+                        aria-controls={menuId}
+                        aria-haspopup="true"
+                        onClick={handleProfileMenuOpen}
+                        color="inherit"
+                        sx={{ 
+                            marginLeft: 'auto', // This pushes it to the right
+                            ml: 0 // Remove any left margin
+                        }}
+                    >
+                        {auth.loggedIn ? (
+                            auth.user?.avatar ? (
+                                <Avatar 
+                                    src={auth.user.avatar} 
+                                    sx={{ width: 32, height: 32 }}
+                                />
                             ) : (
-                                <AccountCircle />
-                            )}
-                        </IconButton>
-                    </Box>
+                                // If logged in but no avatar, show initials or generic
+                                <Avatar sx={{ width: 32, height: 32, bgcolor: 'secondary.main' }}>
+                                    {auth.user?.userName?.charAt(0) || 'U'}
+                                </Avatar>
+                            )
+                        ) : (
+                            // Not logged in (guest or on welcome screen) - show lock icon per diagrams
+                            <AccountCircle />
+                        )}
+                    </IconButton>
                 </Toolbar>
             </AppBar>
             {menu}

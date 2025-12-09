@@ -43,7 +43,8 @@ export const GlobalStoreActionType = {
     SET_CURRENT_PLAYLIST: "SET_CURRENT_PLAYLIST",
     SET_CURRENT_SONG: "SET_CURRENT_SONG",
     SET_EDIT_MODE: "SET_EDIT_MODE",
-    SET_GUEST_MODE: "SET_GUEST_MODE"
+    SET_GUEST_MODE: "SET_GUEST_MODE",
+    LOAD_ALL_PLAYLISTS: "LOAD_ALL_PLAYLISTS"
 };
 
 // WE'LL NEED THIS TO PROCESS TRANSACTIONS
@@ -105,7 +106,7 @@ function GlobalStoreContextProvider(props) {
 
     // SINCE WE'VE WRAPPED THE STORE IN THE AUTH CONTEXT WE CAN ACCESS THE USER HERE
     const { auth } = useContext(AuthContext);
-    
+
     // HERE'S THE DATA STORE'S REDUCER, IT MUST
     // HANDLE EVERY TYPE OF STATE CHANGE
     const storeReducer = (action) => {
@@ -307,6 +308,12 @@ function GlobalStoreContextProvider(props) {
                     listNameActive: false,
                     listIdMarkedForDeletion: null,
                     listMarkedForDeletion: null
+                });
+            }
+            case GlobalStoreActionType.LOAD_ALL_PLAYLISTS: {
+                return setStore({
+                    ...store,
+                    currentPlaylists: payload.playlists
                 });
             }
             default:
@@ -651,6 +658,48 @@ function GlobalStoreContextProvider(props) {
             ...store,
             addingToPlaylistId: playlistId
         });
+    }
+
+    store.searchAllPlaylists = async function (searchParams) {
+        try {
+            const response = await fetch('http://localhost:4000/store/playlists/search/all', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(searchParams),
+                credentials: 'include'
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                storeReducer({
+                    type: GlobalStoreActionType.SET_PLAYLIST_SEARCH_RESULTS,
+                    payload: { playlists: data.playlists }
+                });
+            }
+
+        } catch (error) {
+            console.error("There wasd an error searching all the playlists: ", error);
+        }
+    };
+
+    store.loadAllPlaylists = async function () {
+        try {
+            const response = await fetch('http://localhost:4000/store/all-playlists', {
+                credentials: 'include'
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                storeReducer({
+                    type: GlobalStoreActionType.LOAD_ALL_PLAYLISTS,
+                    payload: { playlists: data.playlists }
+                });
+            }
+        } catch (error) {
+            console.error("There was an aerror loading all the playlists: ", error);
+        }
     }
 
     store.tryAcessingOtherAccountPlaylist = function(){

@@ -1,10 +1,11 @@
 import './App.css';
-import { useContext } from 'react'
+import { React } from 'react'
 import { BrowserRouter, Route, Switch } from 'react-router-dom'
 import { AuthContextProvider } from './auth';
-import { GlobalStoreContextProvider, GlobalStoreContext } from './store'
+import { GlobalStoreContextProvider } from './store'
 import {
     AppBanner,
+    HomeWrapper,
     WelcomeScreen,
     LoginScreen,
     RegisterScreen,
@@ -17,27 +18,11 @@ import {
     MUIDeleteModal,
     MUIEditSongModal,
     RemoveSongModal,
+    SelectAvatarModal,
     NewSongModal,
+    EditPlaylistModal
 } from './components'
-/*
-  This is the entry-point for our application. Notice that we
-  inject our store into all the components in our application.
-  
-  @author McKilla Gorilla
-*/
 
-function Modals() {
-    const { store } = useContext(GlobalStoreContext);
-
-    return (
-        <>
-            <PlayPlaylistModal />
-            <MUIDeleteModal />
-            <MUIEditSongModal />
-            <RemoveSongModal />
-        </>
-    );
-}
 const App = () => {   
     return (
         <BrowserRouter>
@@ -49,14 +34,20 @@ const App = () => {
                         <Route path="/login/" exact component={LoginScreen} />
                         <Route path="/register/" exact component={RegisterScreen} />
                         <Route path="/edit-account/" exact component={EditAccountScreen} />
-                        <Route path="/playlist/" exact component={PlaylistsScreen} />
-
+                        <Route path="/playlists/" exact component={PlaylistsScreen} />
                         <Route path="/songs/" exact component={SongsCatalogScreen} />
                         <Route path="/playlist/:id" exact component={WorkspaceScreen} />
                     </Switch>
                     <Statusbar />
-
-                    <Modals />
+                    
+                    {/* Modals */}
+                    <PlayPlaylistModal />
+                    <MUIDeleteModal />
+                    <MUIEditSongModal />
+                    <RemoveSongModal />
+                    <SelectAvatarModal />
+                    <EditPlaylistModal />
+                    {/* NewSongModal is handled within SongsCatalogScreen */}
                 </GlobalStoreContextProvider>
             </AuthContextProvider>
         </BrowserRouter>
