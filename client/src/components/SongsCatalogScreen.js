@@ -18,7 +18,7 @@ import SearchIcon from '@mui/icons-material/Search';
 import ClearIcon from '@mui/icons-material/Clear';
 import AddIcon from '@mui/icons-material/Add';
 import CloseIcon from '@mui/icons-material/Close';
-import YouTubePlayer from './youTubePlayer';
+import YouTubePlayer from './YouTubePlayer';
 
 export default function SongsCatalogScreen() {
     const { store } = useContext(GlobalStoreContext);

@@ -36,16 +36,11 @@ export default function RemoveSongModal() {
             });
             
             if (response.ok) {
-                // Refresh songs list
                 store.searchSongs(store.songSearch);
                 handleClose();
-            } else {
-                const errorData = await response.json();
-                alert(errorData.errorMessage || "Failed to remove song");
             }
         } catch (error) {
             console.error("Error removing song:", error);
-            alert("Error removing song. Please try again.");
         }
     };
 

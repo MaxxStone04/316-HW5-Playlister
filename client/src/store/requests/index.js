@@ -1,45 +1,66 @@
+/*
+    This is our http api, which we use to send requests to
+    our back-end API. Note we`re using the Axios library
+    for doing this, which is an easy to use AJAX-based
+    library. We could (and maybe should) use Fetch, which
+    is a native (to browsers) standard, but Axios is easier
+    to use when sending JSON back and forth and it`s a Promise-
+    based API which helps a lot with asynchronous communication.
+    
+    @author McKilla Gorilla
+*/
+
 const BASE_URL = 'http://localhost:4000/store';
 
 async function fetchHandler(url, options = {}) {
-    try {
-        const response = await fetch(`${BASE_URL}${url}`, {
-            credentials: 'include',
-            headers: {
-                'Content-Type': 'application/json',
-                ...options.headers,
-            },
-            ...options
-        });
+    const response = await fetch(`${BASE_URL}${url}`, {
+        credentials: 'include',
+        headers: {
+            'Content-Type': 'application/JSON',
+            ...options.headers,
+        },
+        ...options
+    });
 
-        let data = {};
-        
-        // Try to parse JSON only if there's content
-        if (response.status !== 204) {
-            try {
-                data = await response.json();
-            } catch (jsonError) {
-                console.warn('Failed to parse JSON response:', jsonError);
+    if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw {
+            status: response.status,
+            data: errorData,
+            response: {
+                data: errorData
             }
-        }
+        };
+    }
 
-        if (!response.ok) {
-            const error = new Error(data.errorMessage || `HTTP ${response.status}`);
-            error.status = response.status;
-            error.data = data;
-            throw error;
-        }
+    const contentLength = response.headers.get('content-length');
+    if (contentLength === '0' || response.status === 204) {
+        return {
+            status: response.status,
+            data: {}
+        };
+    }
 
+    try {
+        const data = await response.json()
         return {
             status: response.status,
             data: data,
         };
     } catch (error) {
-        console.error('Fetch error:', error);
-        throw error;
+        return {
+            status: response.status,
+            data: {},
+        };
     }
 }
 
-// THESE ARE ALL THE REQUESTS WE'LL BE MAKING
+// THESE ARE ALL THE REQUESTS WE`LL BE MAKING, ALL REQUESTS HAVE A
+// REQUEST METHOD (like get) AND PATH (like /top5list). SOME ALSO
+// REQUIRE AN id SO THAT THE SERVER KNOWS ON WHICH LIST TO DO ITS
+// WORK, AND SOME REQUIRE DATA, WHICH WE WE WILL FORMAT HERE, FOR WHEN
+// WE NEED TO PUT THINGS INTO THE DATABASE OR IF WE HAVE SOME
+// CUSTOM FILTERS FOR QUERIES
 export const createPlaylist = (newListName, newSongs, userEmail) => {
     return fetchHandler(`/playlist/`, {
         method: 'POST',
@@ -60,6 +81,7 @@ export const getPlaylistById = (id) => fetchHandler(`/playlist/${id}`);
 export const getPlaylistPairs = () => fetchHandler(`/playlistpairs/`);
 
 export const updatePlaylistById = (id, playlist) => {
+    console.log("Updating playlist with ID:", id);
     return fetchHandler(`/playlist/${id}`, {
         method: 'PUT',
         body: JSON.stringify({
@@ -68,80 +90,12 @@ export const updatePlaylistById = (id, playlist) => {
     });
 }
 
-// New endpoints for HW5
-export const searchPlaylists = (searchParams) => {
-    return fetchHandler(`/playlists/search`, {
-        method: 'POST',
-        body: JSON.stringify(searchParams)
-    });
-}
-
-export const searchSongs = (searchParams) => {
-    return fetchHandler(`/songs/search`, {
-        method: 'POST',
-        body: JSON.stringify(searchParams)
-    });
-}
-
-export const sortPlaylists = (sortParams) => {
-    return fetchHandler(`/playlists/sort`, {
-        method: 'POST',
-        body: JSON.stringify(sortParams)
-    });
-}
-
-export const sortSongs = (sortParams) => {
-    return fetchHandler(`/songs/sort`, {
-        method: 'POST',
-        body: JSON.stringify(sortParams)
-    });
-}
-
-export const dupPlaylist = (playlistId) => {
-    return fetchHandler(`/playlist/${playlistId}/dup`, {
-        method: 'POST'
-    });
-}
-
-export const addSongToCatalog = (songData) => {
-    return fetchHandler(`/songs`, {
-        method: 'POST',
-        body: JSON.stringify(songData)
-    });
-}
-
-export const removeSongFromCatalog = (songId) => {
-    return fetchHandler(`/songs/${songId}`, {
-        method: 'DELETE'
-    });
-}
-
-export const updateSongInCatalog = (songId, songData) => {
-    return fetchHandler(`/songs/${songId}`, {
-        method: 'PUT',
-        body: JSON.stringify(songData)
-    });
-}
-
-export const incrementSongListens = (songId) => {
-    return fetchHandler(`/songs/${songId}/listen`, {
-        method: 'PUT'
-    });
-}
-
 const apis = {
     createPlaylist,
     deletePlaylistById,
     getPlaylistById,
     getPlaylistPairs,
-    updatePlaylistById,
-    searchPlaylists,
-    searchSongs,
-    sortPlaylists,
-    sortSongs,
-    dupPlaylist,
-    addSongToCatalog,
-    removeSongFromCatalog
+    updatePlaylistById
 }
 
 export default apis;

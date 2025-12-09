@@ -63,20 +63,19 @@ export default function SongCatalogCard({ song, onSelect, isSelected, index }) {
         setAnchorEl(null);
     };
 
-    // Handle Edit Song button click
     const handleEditSong = () => {
-        console.log("Edit Song clicked for:", song.title);
+        // Show the edit song modal using the store
         store.showEditSongModal(index, song);
     };
 
-    // Handle Remove Song button click
     const handleRemoveSong = () => {
-        console.log("Remove Song clicked for:", song.title);
+        // Show the remove song modal using the store
         store.showRemoveSongModal(song._id, song);
     };
 
     const handleAddToPlaylist = async (playlistId, playlistName) => {
         try {
+            // First get the current playlist
             const response = await fetch(`http://localhost:4000/store/playlist/${playlistId}`, {
                 credentials: 'include'
             });
@@ -86,7 +85,7 @@ export default function SongCatalogCard({ song, onSelect, isSelected, index }) {
                 if (data.success) {
                     const playlist = data.playlist;
                     
-                    // Check if song already exists in playlist
+                    // Check if song already exists in this playlist
                     const songExists = playlist.songs.some(
                         s => s.title === song.title && 
                              s.artist === song.artist && 
@@ -94,7 +93,7 @@ export default function SongCatalogCard({ song, onSelect, isSelected, index }) {
                     );
                     
                     if (!songExists) {
-                        // Add song to playlist
+                        // Create updated playlist with new song
                         const updatedPlaylist = {
                             ...playlist,
                             songs: [...playlist.songs, {
@@ -105,6 +104,7 @@ export default function SongCatalogCard({ song, onSelect, isSelected, index }) {
                             }]
                         };
                         
+                        // Update the playlist on server
                         const updateResponse = await fetch(`http://localhost:4000/store/playlist/${playlistId}`, {
                             method: 'PUT',
                             headers: {
@@ -117,30 +117,25 @@ export default function SongCatalogCard({ song, onSelect, isSelected, index }) {
                         });
                         
                         if (updateResponse.ok) {
-                            console.log(`Song added to "${playlistName}" playlist!`);
-                            
-                            // Show success message (you can replace this with a toast notification)
+                            // Show success message
                             alert(`"${song.title}" added to "${playlistName}" playlist!`);
                             
-                            // Update song's playlist count
+                            // Update song's playlist count if endpoint exists
                             try {
                                 await fetch(`http://localhost:4000/store/songs/${song._id}/increment-playlist-count`, {
                                     method: 'PUT',
                                     credentials: 'include'
                                 });
-                            } catch (error) {
-                                console.error("Error updating playlist count:", error);
-                                // Continue anyway - the main action succeeded
+                            } catch (err) {
+                                console.log("Note: Playlist count endpoint not implemented yet");
                             }
                         } else {
-                            alert("Error adding song to playlist. Please try again.");
+                            alert("Failed to add song to playlist. Please try again.");
                         }
                     } else {
                         alert(`"${song.title}" already exists in "${playlistName}" playlist`);
                     }
                 }
-            } else {
-                alert("Error accessing playlist. Please try again.");
             }
         } catch (error) {
             console.error("Error adding song to playlist:", error);
@@ -159,6 +154,7 @@ export default function SongCatalogCard({ song, onSelect, isSelected, index }) {
             >
                 <CardContent sx={{ p: 2, pb: '8px !important' }}>
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                        {/* Song Info */}
                         <Box sx={{ flex: 1 }}>
                             <Typography 
                                 variant="h6" 
@@ -172,6 +168,7 @@ export default function SongCatalogCard({ song, onSelect, isSelected, index }) {
                                 {song.title} by {song.artist} ({song.year})
                             </Typography>
                             
+                            {/* Listens and Playlists Count */}
                             <Box sx={{ 
                                 display: 'flex', 
                                 justifyContent: 'space-between',
@@ -200,6 +197,7 @@ export default function SongCatalogCard({ song, onSelect, isSelected, index }) {
                             </Box>
                         </Box>
                         
+                        {/* Ellipsis Menu Button - only show if logged in */}
                         {auth.loggedIn && (
                             <IconButton
                                 aria-label="song actions"
@@ -219,7 +217,7 @@ export default function SongCatalogCard({ song, onSelect, isSelected, index }) {
                 </CardContent>
             </StyledCard>
             
-            {/* Song Menu Component */}
+            {/* Custom Menu Component */}
             <SongMenu
                 anchorEl={anchorEl}
                 open={open}

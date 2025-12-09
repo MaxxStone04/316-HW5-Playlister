@@ -15,7 +15,6 @@
     "jstps": "^2.0.6",
     "react": "^17.0.2",
     "react-dom": "^17.0.2",
-    "react-dropzone": "^14.3.8",
     "react-router-dom": "^5.3.0",
     "react-scripts": "^4.0.3",
     "vite": "^6.4.0",

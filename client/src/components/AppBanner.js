@@ -40,12 +40,7 @@ export default function AppBanner() {
     }
 
     const handleHome = () => {
-        if (auth.loggedIn) {
-            store.closeCurrentList(); 
-            history.push('/playlists');
-        } else {
-            history.push('/');
-        }
+        history.push('/')
     }
 
     const handlePlaylists = () => {
