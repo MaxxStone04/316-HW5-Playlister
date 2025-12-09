@@ -565,6 +565,20 @@ function GlobalStoreContextProvider(props) {
         });
     }
 
+    store.setCurrentSongIndex = function (index) {
+        storeReducer({
+            type: GlobalStoreActionType.SET_CURRENT_SONG,
+            payload : { index }
+        });
+    }
+
+    store.togglePlayPause = function () {
+        setStore({
+            ...store,
+            isPlaying: !store.isPlaying
+        });
+    };
+
     store.showSelectAvatarModal = function () {
         setStore({
             ...store,

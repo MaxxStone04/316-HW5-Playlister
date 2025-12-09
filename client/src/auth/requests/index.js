@@ -1,68 +1,47 @@
-/*
-    This is our http api for all things auth, which we use to 
-    send authorization requests to our back-end API. Note we`re 
-    using the Axios library for doing this, which is an easy to 
-    use AJAX-based library. We could (and maybe should) use Fetch, 
-    which is a native (to browsers) standard, but Axios is easier
-    to use when sending JSON back and forth and it`s a Promise-
-    based API which helps a lot with asynchronous communication.
-    
-    @author McKilla Gorilla
-*/
-
 const BASE_URL = 'http://localhost:4000/auth'
 
 async function fetchHandler(url, options = {}) {
-    const response = await fetch(`${BASE_URL}${url}`, {
-        credentials: 'include',
-        headers: {
-            'Content-Type': 'application/json',
-            ...options.headers,
-        },
-        ...options,
-    });
-
-    if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw {
-            status: response.status,
-            data: errorData,
-            response: {
-                data: errorData
-            }
-        };
-    }
-
-    const contentLength = response.headers.get('content-length');
-    if (contentLength === '0' || response.status === 204) {
-        return {
-            status: response.status,
-            data: {}
-        };
-    }
-
     try {
-        const data = await response.json();
+        const response = await fetch(`${BASE_URL}${url}`, {
+            credentials: 'include',
+            headers: {
+                'Content-Type': 'application/json',
+                ...options.headers,
+            },
+            ...options,
+        });
+
+        const contentLength = response.headers.get('content-length');
+        let data = {};
+        
+        // Try to parse JSON only if there's content
+        if (contentLength !== '0' && response.status !== 204) {
+            try {
+                data = await response.json();
+            } catch (jsonError) {
+                console.warn('Failed to parse JSON response:', jsonError);
+            }
+        }
+
+        if (!response.ok) {
+            // Create a consistent error object
+            const error = new Error(data.errorMessage || `HTTP ${response.status}`);
+            error.status = response.status;
+            error.data = data;
+            throw error;
+        }
+
         return {
             status: response.status,
             data: data,
         };
     } catch (error) {
-        return {
-            status: response.status,
-            data: {},
-        };
+        // Re-throw the error so it can be caught by the caller
+        throw error;
     }
-    
 }
 
-// THESE ARE ALL THE REQUESTS WE`LL BE MAKING, ALL REQUESTS HAVE A
-// REQUEST METHOD (like get) AND PATH (like /register). SOME ALSO
-// REQUIRE AN id SO THAT THE SERVER KNOWS ON WHICH LIST TO DO ITS
-// WORK, AND SOME REQUIRE DATA, WHICH WE WE WILL FORMAT HERE, FOR WHEN
-// WE NEED TO PUT THINGS INTO THE DATABASE OR IF WE HAVE SOME
-// CUSTOM FILTERS FOR QUERIES
-
+// THESE ARE ALL THE REQUESTS WE'LL BE MAKING
 export const getLoggedIn = () => fetchHandler(`/loggedIn/`);
 
 export const loginUser = (email, password) => {
@@ -75,21 +54,20 @@ export const loginUser = (email, password) => {
     });
 }
 
-export const logoutUser = () => fetchHandler(`/logout/`)
+export const logoutUser = () => fetchHandler(`/logout/`);
 
-export const registerUser = (firstName, lastName, email, password, passwordVerify) => {
+export const registerUser = (userName, email, password, passwordVerify, avatar) => {
     return fetchHandler(`/register/`, {
         method: 'POST',
         body: JSON.stringify({
-            firstName: firstName,
-            lastName: lastName,
+            userName: userName,
             email: email,
             password: password,
-            passwordVerify: passwordVerify
+            passwordVerify: passwordVerify,
+            avatar: avatar
         })
     });
 }
-
 const apis = {
     getLoggedIn,
     registerUser,
